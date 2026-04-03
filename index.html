@@ -5813,5 +5813,133 @@ function waitForFirebaseAndInit(){
 })();
 </script>
 
+
+<script>
+/* v12 definitive regional combat fix */
+(function(){
+  function roiGetCurrentRegionEnemies(){
+    try{
+      if(typeof window.availEnemies==='function'){
+        const arr = window.availEnemies();
+        if(Array.isArray(arr) && arr.length) return arr;
+      }
+    }catch(e){}
+    return [];
+  }
+
+  function roiFindRegionalEnemy(name){
+    if(!name) return null;
+    const current = roiGetCurrentRegionEnemies();
+    let found = current.find(e=>e && e.name===name);
+    if(found) return found;
+
+    const enemyBtns = document.getElementById('enemy-btns');
+    if(enemyBtns){
+      const exists = Array.from(enemyBtns.querySelectorAll('button[data-enemy-name]')).some(b=>b.dataset.enemyName===name);
+      if(exists && typeof window.availEnemies==='function'){
+        const retry = window.availEnemies().find(e=>e && e.name===name);
+        if(retry) return retry;
+      }
+    }
+
+    try{
+      if(Array.isArray(window.BASE_ENEMIES)){
+        return window.BASE_ENEMIES.find(e=>e && e.name===name) || null;
+      }
+    }catch(e){}
+    return null;
+  }
+
+  window.getEnemyByName = roiFindRegionalEnemy;
+
+  window.startCombat = function(bname,isBoss=false,isWeekly=false){
+    if(G.combat.active) return;
+    if(!G.hero.class){ toast('Escolha sua classe primeiro!'); return; }
+    if(G.dungeon && G.dungeon.active){ toast('🗺 Você está na masmorra! Espere terminar.'); return; }
+    if(G.hero.hp<=0){
+      try{ applyDeathPenalty(); }catch(e){}
+      G.hero.hp=Math.max(1, Math.floor((G.hero.hpMax||1)*0.5));
+      if(typeof addLog==='function') addLog('💀 HP restaurado em 50%.','sys');
+    }
+
+    let base=null;
+    if(isWeekly) base = window.WEEKLY_BOSS;
+    else if(isBoss) base = window.DAILY_BOSS;
+    else base = roiFindRegionalEnemy(bname);
+
+    if(!base){
+      toast('❌ Monstro regional indisponível nesta região.');
+      return;
+    }
+
+    const needLv = Number(base.minLv||1);
+    if(!isBoss && !isWeekly && (G.hero.level||1) < needLv){
+      toast('❌ Este monstro libera no nível '+needLv+'!');
+      return;
+    }
+
+    if(!isBoss && !isWeekly) G.combat.lastEnemyName = base.name;
+
+    const enemy = scaledE(base, true);
+    enemy.baseName = base.name;
+    enemy.btype = isWeekly ? 'weekly' : isBoss ? 'boss' : (base.type || 'low');
+    G.combat.enemy = enemy;
+    G.combat.active = true;
+    G.combat.buffTurns = 0;
+    G.combat.buffAtk = 0;
+    G.combat.buffDef = 0;
+    G.combat.buffDodge = 0;
+
+    try{ renderCombatUI(); }catch(e){}
+    try{ setBadge(isWeekly?'⚔ SEMANAL':isBoss?'⚔ DIÁRIO':'⚔ Combatendo',isWeekly?'var(--pur)':isBoss?'var(--gold)':'var(--red)',isWeekly?'rgba(128,96,224,.5)':isBoss?'rgba(201,168,76,.5)':'rgba(200,60,60,.5)'); }catch(e){}
+    if(typeof addLog==='function') addLog('⚔ '+(enemy.name||base.name)+' apareceu em batalha!','sys');
+
+    clearInterval(G.combat.tid);
+    G.combat.tid = setInterval(function(){
+      if(typeof combatRound==='function') combatRound(isBoss,isWeekly);
+    }, 1600);
+
+    try{ updateProfile(); }catch(e){}
+    try{ save(); }catch(e){}
+  };
+
+  window.rebuildEBtns = function(){
+    const c=document.getElementById('enemy-btns');
+    if(!c) return;
+    c.innerHTML='';
+
+    try{ if(typeof renderRegionSelector==='function') renderRegionSelector(); }catch(e){}
+
+    const mons = roiGetCurrentRegionEnemies();
+    mons.forEach(mon=>{
+      const btn=document.createElement('button');
+      btn.className='abtn'+((G.combat.lastEnemyName===mon.name)?' pri':'');
+      btn.style.minWidth='130px';
+      btn.dataset.enemyName=mon.name;
+      btn.innerHTML=mon.icon+' '+mon.name+'<br><span style="font-size:8px">Lv '+(mon.minLv||1)+'</span>';
+      btn.onclick=()=>window.startCombat(mon.name,false,false);
+      c.appendChild(btn);
+    });
+
+    const dBtn=document.createElement('button');
+    dBtn.className='abtn pri';
+    dBtn.style.opacity=(G.hero.level||1)>=15?'1':'0.45';
+    dBtn.innerHTML='👑 Chefe Diário<br><span style="font-size:8px">Lv 15+</span>';
+    dBtn.onclick=()=>{ if((G.hero.level||1)<15) return toast('❌ Masmorras e chefes liberados no nível 15!'); if(G.dailyBossKilled) return toast('❌ Chefe Diário já derrotado!'); window.startCombat(null,true,false); };
+    c.appendChild(dBtn);
+
+    const wBtn=document.createElement('button');
+    wBtn.className='abtn';
+    wBtn.style.opacity=(G.hero.level||1)>=20?'1':'0.45';
+    wBtn.innerHTML='💀 Chefe Semanal<br><span style="font-size:8px">Lv 20+</span>';
+    wBtn.onclick=()=>{ if((G.hero.level||1)<20) return toast('❌ Chefe semanal liberado no nível 20!'); if(G.weeklyBossKilled) return toast('❌ Chefe Semanal já derrotado!'); window.startCombat(null,false,true); };
+    c.appendChild(wBtn);
+  };
+
+  setTimeout(function(){ try{ window.rebuildEBtns(); }catch(e){ console.error(e); } }, 30);
+  setTimeout(function(){ try{ window.rebuildEBtns(); }catch(e){ console.error(e); } }, 300);
+})();
+</script>
+
 </body>
 </html>
