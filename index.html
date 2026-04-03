@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Realm of Iron — MMO Idle</title>
+<link rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2313151e'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle' fill='%23c9a84c'%3E⚔%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
@@ -17,7 +18,6 @@
   --atk:#e07030;--def:#4080c0;--spd:#40b060;
   --rg:#f0c040;--rs:#aab0c0;--rb:#c08050;
   --dur:#d0a050;
-  --white:#fff;--green:#2ecc71;--blue:#3498db;--orange:#e67e22;--darkred:#8b0000;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:var(--bg);color:var(--txt);font-family:'Lato',sans-serif;min-height:100vh;overflow-x:hidden}
@@ -66,7 +66,7 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
 .eg{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
 .es{background:var(--card2);border:1px solid var(--border);border-radius:5px;padding:9px 5px;text-align:center;cursor:pointer;transition:.2s}
 .es:hover{border-color:var(--gold)}.es .ei{font-size:19px;margin-bottom:3px}.es .en{font-size:8px;color:var(--muted)}.es .ev{font-size:9px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cep{color:#c060e0!important}.cer{color:#4090e0!important}.ceu{color:#40c060!important}.clg{color:#e8b040!important}.cmyth{color:#ff4040!important}
+.cep{color:#c060e0!important}.cer{color:#4090e0!important}.ceu{color:#40c060!important}
 .dura{font-size:7px!important;color:var(--dur)!important;margin-top:2px}
 
 .comb{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -174,6 +174,7 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
 .login-card{background:var(--panel);border:1px solid var(--gold);border-radius:12px;padding:30px;text-align:center;max-width:350px}
 .login-card h2{color:var(--gold);margin-bottom:15px}
 .login-card p{color:var(--muted);margin-bottom:20px;font-size:12px}
+.login-loading{color:var(--gold);margin-top:10px;font-size:11px;display:none}
 
 @media(max-width:500px){
   .topbar h1{font-size:13px}.tb{font-size:9px;padding:7px 3px}.tb-ic{font-size:14px}
@@ -188,7 +189,8 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
   <div class="login-card">
     <h2>⚔ REALM OF IRON</h2>
     <p>Para entrar no reino, você precisa autenticar com sua conta Google.</p>
-    <button class="abtn google-btn" onclick="initGoogleLogin()" style="width:100%;padding:12px">🔑 Entrar com Google</button>
+    <button class="abtn google-btn" id="googleLoginBtn" onclick="initGoogleLogin()" style="width:100%;padding:12px">🔑 Entrar com Google</button>
+    <div id="loginLoading" class="login-loading">⏳ Carregando...</div>
   </div>
 </div>
 
@@ -252,7 +254,7 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
     </div>
   </div>
 
-  <!-- Combat Panel (simplificado) -->
+  <!-- Combat Panel -->
   <div class="panel" id="tab-combat">
     <div class="card">
       <div class="ct">⚔ Arena</div>
@@ -280,7 +282,6 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
     </div>
   </div>
 
-  <!-- Outros panels simplificados -->
   <div class="panel" id="tab-inventory"><div class="card"><div class="ct">🎒 Inventário</div><div class="inv-grid" id="inv-grid"></div></div></div>
   <div class="panel" id="tab-forge"><div class="card"><div class="ct">🔨 Forja</div><div class="forge-list" id="forge-list"></div></div></div>
   <div class="panel" id="tab-shop"><div class="card"><div class="ct">🛒 Loja</div><div class="shop-grid" id="shop-grid"></div></div></div>
@@ -288,7 +289,7 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
   <div class="panel" id="tab-ranking"><div class="card"><div class="ct">👑 Ranking</div><div class="rl" id="rlist"></div></div></div>
 </div>
 
-<!-- Modal de Classe (só aparece após login e nome) -->
+<!-- Modal de Classe -->
 <div class="modal-bg" id="classModal" style="display:none">
   <div class="modal">
     <h2>Escolha sua Classe</h2>
@@ -318,15 +319,24 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
 <div class="toast" id="toast"></div>
 
 <script>
-// ========== CONFIGURAÇÃO INICIAL ==========
-const STORAGE_KEY = 'realm_iron_v9';
+// ========== CONFIGURAÇÃO FIREBASE ==========
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBtBNptJ9TxFlGArwHX9iwDQVv-9GGL9Us",
+  authDomain: "realm-of-iron.firebaseapp.com",
+  projectId: "realm-of-iron",
+  storageBucket: "realm-of-iron.firebasestorage.app",
+  messagingSenderId: "571041801417",
+  appId: "1:571041801417:web:2e0023a1fac20553331918"
+};
+
+const STORAGE_KEY = 'realm_iron_v10';
 
 let G = {
   hero: { name: '', class: '', icon: '', classType: '', level: 1, xp: 0, xpNext: 100, hp: 100, hpMax: 100, mana: 50, manaMax: 50, atk: 10, def: 6, spd: 8, crit: 5, renown: 0, gold: 100, kills: 0, deaths: 0, prestige: 0, prestigeBonus: 1.0 },
   combat: { active: false, auto: false, enemy: null, tid: null },
   inventory: [], materials: {}, potions: { potion: 0, mana_potion: 0, elixir: 0 },
   equipment: { helm: null, chest: null, weapon: null, boots: null, ring: null, amulet: null, gloves: null, gem: null },
-  durability: {}, userId: null, userEmail: null, lastNameChange: 0, nameChangesUsed: 0
+  durability: {}, userId: null, userEmail: null
 };
 
 // Inimigos base
@@ -338,30 +348,62 @@ const BASE_ENEMIES = [
   { name: 'Dragão', icon: '🐉', hpM: 12, atkMin: 50, atkMax: 90, defM: 3, xpM: 10, renM: 20, goldM: 80, minLv: 20 }
 ];
 
-// Firebase
-let firebaseInitialized = false;
+let firebaseApp = null;
 let db = null;
+let auth = null;
 
+// Inicializar Firebase
 function initFirebase() {
-  if (typeof firebase === 'undefined' || firebase.apps.length === 0) return false;
+  if (firebaseApp) return true;
   try {
-    const config = { apiKey: "AIzaSyBtBNptJ9TxFlGArwHX9iwDQVv-9GGL9Us", authDomain: "realm-of-iron.firebaseapp.com", projectId: "realm-of-iron", storageBucket: "realm-of-iron.firebasestorage.app", messagingSenderId: "571041801417", appId: "1:571041801417:web:2e0023a1fac20553331918" };
-    if (firebase.apps.length === 0) firebase.initializeApp(config);
+    if (typeof firebase === 'undefined') {
+      console.log('Aguardando Firebase carregar...');
+      return false;
+    }
+    firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
     db = firebase.firestore();
-    firebaseInitialized = true;
+    auth = firebase.auth();
+    console.log('Firebase inicializado!');
     return true;
-  } catch(e) { return false; }
+  } catch(e) {
+    console.error('Erro Firebase:', e);
+    return false;
+  }
+}
+
+// Aguardar Firebase carregar
+function waitForFirebase() {
+  return new Promise((resolve) => {
+    if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+      resolve(initFirebase());
+    } else {
+      setTimeout(() => resolve(waitForFirebase()), 200);
+    }
+  });
 }
 
 async function initGoogleLogin() {
-  if (!initFirebase()) { toast('⚠️ Firebase não carregou'); return; }
+  const loadingDiv = document.getElementById('loginLoading');
+  const loginBtn = document.getElementById('googleLoginBtn');
+  if (loadingDiv) loadingDiv.style.display = 'block';
+  if (loginBtn) loginBtn.disabled = true;
+  
+  await waitForFirebase();
+  
+  if (!auth) {
+    toast('❌ Erro ao carregar Firebase. Tente recarregar a página.');
+    if (loadingDiv) loadingDiv.style.display = 'none';
+    if (loginBtn) loginBtn.disabled = false;
+    return;
+  }
+  
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    const result = await firebase.auth().signInWithPopup(provider);
+    const result = await auth.signInWithPopup(provider);
     const user = result.user;
     G.userId = user.uid;
     G.userEmail = user.email;
-    document.getElementById('userEmailDisplay').innerText = user.email;
+    document.getElementById('userEmailDisplay').innerText = user.email || user.displayName;
     await loadUserData();
     document.getElementById('loginOverlay').style.display = 'none';
     document.getElementById('gameContainer').style.display = 'flex';
@@ -369,12 +411,19 @@ async function initGoogleLogin() {
     else if (!G.hero.class) showClassModal();
     else { updateProfile(); rebuildEnemyButtons(); renderInventory(); }
     toast(`✅ Bem-vindo, ${user.displayName || user.email}!`);
-  } catch(e) { toast('❌ Erro no login'); }
+    updateOnlineCount();
+  } catch(e) {
+    console.error('Erro login:', e);
+    toast('❌ Erro no login: ' + (e.message || 'Tente novamente'));
+  } finally {
+    if (loadingDiv) loadingDiv.style.display = 'none';
+    if (loginBtn) loginBtn.disabled = false;
+  }
 }
 
 async function logoutGoogle() {
-  if (firebaseInitialized && firebase.auth) await firebase.auth().signOut();
-  G = { hero: { name: '', class: '', icon: '', classType: '', level: 1, xp: 0, xpNext: 100, hp: 100, hpMax: 100, mana: 50, manaMax: 50, atk: 10, def: 6, spd: 8, crit: 5, renown: 0, gold: 100, kills: 0, deaths: 0, prestige: 0, prestigeBonus: 1.0 }, combat: { active: false, auto: false, enemy: null, tid: null }, inventory: [], materials: {}, potions: { potion: 0, mana_potion: 0, elixir: 0 }, equipment: { helm: null, chest: null, weapon: null, boots: null, ring: null, amulet: null, gloves: null, gem: null }, durability: {}, userId: null, userEmail: null, lastNameChange: 0, nameChangesUsed: 0 };
+  if (auth) await auth.signOut();
+  G = { hero: { name: '', class: '', icon: '', classType: '', level: 1, xp: 0, xpNext: 100, hp: 100, hpMax: 100, mana: 50, manaMax: 50, atk: 10, def: 6, spd: 8, crit: 5, renown: 0, gold: 100, kills: 0, deaths: 0, prestige: 0, prestigeBonus: 1.0 }, combat: { active: false, auto: false, enemy: null, tid: null }, inventory: [], materials: {}, potions: { potion: 0, mana_potion: 0, elixir: 0 }, equipment: { helm: null, chest: null, weapon: null, boots: null, ring: null, amulet: null, gloves: null, gem: null }, durability: {}, userId: null, userEmail: null };
   document.getElementById('loginOverlay').style.display = 'flex';
   document.getElementById('gameContainer').style.display = 'none';
   toast('👋 Logout realizado');
@@ -382,23 +431,25 @@ async function logoutGoogle() {
 
 async function loadUserData() {
   if (!db || !G.userId) return;
-  const doc = await db.collection('players').doc(G.userId).get();
-  if (doc.exists) {
-    const data = doc.data();
-    if (data.gameData) {
-      const loaded = JSON.parse(data.gameData);
-      Object.assign(G, loaded);
-      G.combat = { active: false, auto: false, enemy: null, tid: null };
-      G.userId = loaded.userId || G.userId;
-      G.userEmail = loaded.userEmail || G.userEmail;
+  try {
+    const doc = await db.collection('players').doc(G.userId).get();
+    if (doc.exists) {
+      const data = doc.data();
+      if (data.gameData) {
+        const loaded = JSON.parse(data.gameData);
+        Object.assign(G, loaded);
+        G.combat = { active: false, auto: false, enemy: null, tid: null };
+      }
     }
-  }
+  } catch(e) { console.error('Load error:', e); }
   saveToLocal();
 }
 
 async function saveToCloud() {
   if (!db || !G.userId) return;
-  await db.collection('players').doc(G.userId).set({ gameData: JSON.stringify(G), userEmail: G.userEmail, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+  try {
+    await db.collection('players').doc(G.userId).set({ gameData: JSON.stringify(G), userEmail: G.userEmail, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+  } catch(e) { console.error('Save error:', e); }
 }
 
 function saveToLocal() { localStorage.setItem(STORAGE_KEY, JSON.stringify(G)); saveToCloud(); }
@@ -531,6 +582,7 @@ function endCombat(won) {
       G.hero.manaMax = Math.floor(G.hero.manaMax * 1.08);
       G.hero.mana = G.hero.manaMax;
       addLog(`✨ NÍVEL ${G.hero.level}!`, 'kill');
+      rebuildEnemyButtons();
     }
     addLog(`☠ ${e.name} derrotado! +${e.xp} XP | +${e.ren} Renome | +${e.gold} Ouro`, 'kill');
     if (G.combat.auto) {
@@ -640,10 +692,16 @@ function sw(tab, btn) {
 function loadRanking() {
   const rlist = document.getElementById('rlist');
   if (!rlist) return;
-  rlist.innerHTML = '<div style="padding:20px;text-align:center">Carregando...</div>';
+  rlist.innerHTML = '<div style="padding:20px;text-align:center">🏆 Carregando ranking...</div>';
   setTimeout(() => {
-    rlist.innerHTML = '<div style="padding:20px;text-align:center">🏆 Ranking baseado nos dados dos jogadores</div>';
+    rlist.innerHTML = '<div style="padding:20px;text-align:center">👑 Rank baseado no prestígio dos jogadores</div>';
   }, 500);
+}
+
+function updateOnlineCount() {
+  const onlEl = document.getElementById('onl');
+  if (onlEl) onlEl.textContent = Math.floor(Math.random() * 80) + 60 + ' online';
+  setTimeout(updateOnlineCount, 30000);
 }
 
 let toastTimer;
@@ -656,7 +714,8 @@ function toast(msg) {
 }
 
 // Inicialização
-(function init() {
+(async function init() {
+  // Carregar dados locais primeiro
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
     try {
@@ -665,22 +724,23 @@ function toast(msg) {
       G.combat = { active: false, auto: false, enemy: null, tid: null };
     } catch(e) {}
   }
-  initFirebase();
-  // Se já estiver logado via Firebase persistence
-  setTimeout(() => {
-    if (firebase.auth && firebase.auth().currentUser) {
-      G.userId = firebase.auth().currentUser.uid;
-      G.userEmail = firebase.auth().currentUser.email;
-      document.getElementById('userEmailDisplay').innerText = G.userEmail;
-      loadUserData().then(() => {
-        document.getElementById('loginOverlay').style.display = 'none';
-        document.getElementById('gameContainer').style.display = 'flex';
-        if (!G.hero.name) showNameModal();
-        else if (!G.hero.class) showClassModal();
-        else { updateProfile(); rebuildEnemyButtons(); renderInventory(); }
-      });
-    }
-  }, 1000);
+  
+  // Inicializar Firebase e verificar sessão
+  await waitForFirebase();
+  
+  if (auth && auth.currentUser) {
+    G.userId = auth.currentUser.uid;
+    G.userEmail = auth.currentUser.email;
+    document.getElementById('userEmailDisplay').innerText = auth.currentUser.email || auth.currentUser.displayName;
+    await loadUserData();
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('gameContainer').style.display = 'flex';
+    if (!G.hero.name) showNameModal();
+    else if (!G.hero.class) showClassModal();
+    else { updateProfile(); rebuildEnemyButtons(); renderInventory(); }
+  }
+  
+  updateOnlineCount();
 })();
 </script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
