@@ -4,11 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Realm of Iron — MMO Idle</title>
-<link rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2313151e'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle' fill='%23c9a84c'%3E⚔%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
-/* ========== ESTILOS COMPLETOS ========== */
 :root {
   --gold:#c9a84c;--gold-l:#f0d080;--gold-d:#7a6030;
   --bg:#0d0e13;--panel:#13151e;--card:#1a1d29;--card2:#1f2335;
@@ -18,6 +17,9 @@
   --atk:#e07030;--def:#4080c0;--spd:#40b060;
   --rg:#f0c040;--rs:#aab0c0;--rb:#c08050;
   --dur:#d0a050;
+  /* Raridade */
+  --r-common:#e8e0cc;--r-uncommon:#40b060;--r-rare:#4080c0;
+  --r-epic:#8060e0;--r-legendary:#e07030;--r-cursed:#c04040;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:var(--bg);color:var(--txt);font-family:'Lato',sans-serif;min-height:100vh;overflow-x:hidden}
@@ -32,10 +34,10 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
 .tabbar{display:flex;gap:3px;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:5px;flex-wrap:wrap}
-.tb{flex:1;padding:8px 4px;background:transparent;border:1px solid transparent;border-radius:4px;color:var(--muted);font-family:'Cinzel',serif;font-size:11px;cursor:pointer;transition:.2s;text-align:center;letter-spacing:.3px}
+.tb{flex:1;padding:8px 4px;background:transparent;border:1px solid transparent;border-radius:4px;color:var(--muted);font-family:'Cinzel',serif;font-size:10px;cursor:pointer;transition:.2s;text-align:center;letter-spacing:.3px;min-width:52px}
 .tb:hover{color:var(--gold-l);border-color:var(--border)}
 .tb.on{background:rgba(201,168,76,.12);border-color:var(--border-b);color:var(--gold)}
-.tb-ic{display:block;font-size:15px;margin-bottom:2px}
+.tb-ic{display:block;font-size:14px;margin-bottom:2px}
 
 .panel{display:none;flex-direction:column;gap:8px}.panel.on{display:flex}
 
@@ -50,6 +52,9 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
 .pi h2{font-size:17px;color:var(--txt);margin-bottom:3px}
 .cbadge{display:inline-block;font-size:10px;color:var(--gold);background:rgba(201,168,76,.1);border:1px solid var(--border);padding:2px 8px;border-radius:10px;margin-bottom:5px;font-family:'Cinzel',serif}
 .ren{font-size:11px;color:var(--muted)}.ren strong{color:var(--rg);font-size:14px}
+.title-badge{display:inline-block;font-size:9px;color:var(--pur);background:rgba(128,96,224,.1);border:1px solid rgba(128,96,224,.3);padding:1px 6px;border-radius:8px;margin-left:4px}
+.sir-badge{display:inline-block;font-size:9px;color:var(--rg);background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.4);padding:1px 6px;border-radius:8px;margin-left:4px}
+.blessing-badge{background:rgba(128,96,224,.15);border:1px solid rgba(128,96,224,.4);border-radius:6px;padding:6px 10px;margin-top:6px;font-size:10px;color:var(--pur);display:none}
 
 .bl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:3px}
 .bw{height:7px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;margin-bottom:9px}
@@ -66,8 +71,17 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
 .eg{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
 .es{background:var(--card2);border:1px solid var(--border);border-radius:5px;padding:9px 5px;text-align:center;cursor:pointer;transition:.2s}
 .es:hover{border-color:var(--gold)}.es .ei{font-size:19px;margin-bottom:3px}.es .en{font-size:8px;color:var(--muted)}.es .ev{font-size:9px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cep{color:#c060e0!important}.cer{color:#4090e0!important}.ceu{color:#40c060!important}
 .dura{font-size:7px!important;color:var(--dur)!important;margin-top:2px}
+
+/* Raridade de itens */
+.r-common{color:var(--r-common)!important}
+.r-uncommon{color:var(--r-uncommon)!important}
+.r-rare{color:var(--r-rare)!important}
+.r-epic{color:var(--r-epic)!important}
+.r-legendary{color:var(--r-legendary)!important;text-shadow:0 0 6px rgba(224,112,48,.4)}
+.r-cursed{color:var(--r-cursed)!important;text-shadow:0 0 6px rgba(192,64,64,.4)}
+/* legado */
+.cep{color:var(--r-epic)!important}.cer{color:var(--r-rare)!important}.ceu{color:var(--r-uncommon)!important}
 
 .comb{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .fighter{flex:1;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:11px;text-align:center}
@@ -109,6 +123,9 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
 .forge-btn.can{border-color:var(--gold);color:var(--gold)}.forge-btn.can:hover{background:rgba(201,168,76,.15)}
 .forge-btn.no{border-color:var(--border);color:var(--dim);cursor:default}
 
+.forge-level{background:var(--card);border-radius:6px;padding:8px;margin-bottom:10px;text-align:center}
+.forge-level span{color:var(--gold);font-weight:700}
+
 .ml{display:flex;flex-direction:column;gap:7px}
 .mi{display:flex;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:11px}
 .micon{font-size:22px;flex-shrink:0}
@@ -123,6 +140,7 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
 .rl{display:flex;flex-direction:column;gap:5px}
 .ri{display:flex;align-items:center;gap:9px;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;transition:.2s}
 .ri:hover{border-color:var(--border-b)}.ri.me{border-color:rgba(201,168,76,.5);background:rgba(201,168,76,.05)}
+.ri.sir-rank{border-color:rgba(240,192,64,.5);background:rgba(240,192,64,.04)}
 .rp{font-family:'Cinzel',serif;font-size:13px;font-weight:700;width:28px;text-align:center;flex-shrink:0}
 .rp.p1{color:var(--rg)}.rp.p2{color:var(--rs)}.rp.p3{color:var(--rb)}.rp.pn{color:var(--dim)}
 .rav{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;background:#1a1525}
@@ -132,10 +150,20 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
 .rscore{text-align:right;flex-shrink:0}
 .rsv{font-family:'Cinzel',serif;font-size:14px;color:var(--rg)}.rsl{font-size:9px;color:var(--dim)}
 
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--gold);color:var(--gold);padding:9px 18px;border-radius:6px;font-family:'Cinzel',serif;font-size:12px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;text-align:center;max-width:88vw}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--gold);color:var(--gold);padding:9px 18px;border-radius:6px;font-family:'Cinzel',serif;font-size:12px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;text-align:center;max-width:88vw}
 .toast.show{opacity:1}
 
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
+/* LOGIN OVERLAY */
+.login-overlay{position:fixed;inset:0;background:rgba(13,14,19,.97);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px}
+.login-box{background:var(--panel);border:1px solid var(--border-b);border-radius:10px;padding:32px 24px;max-width:380px;width:100%;text-align:center}
+.login-box h2{font-size:22px;color:var(--gold);margin-bottom:6px;letter-spacing:2px}
+.login-box p{font-size:11px;color:var(--muted);margin-bottom:22px;line-height:1.7}
+.login-logo{font-size:56px;margin-bottom:16px}
+.google-signin-btn{display:flex;align-items:center;justify-content:center;gap:10px;background:#4285f4;border:none;border-radius:6px;padding:12px 20px;color:#fff;font-family:'Cinzel',serif;font-size:13px;cursor:pointer;width:100%;transition:.2s;margin-bottom:10px}
+.google-signin-btn:hover{background:#357ae8}
+.google-signin-btn img{width:20px;height:20px}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
 .modal{background:var(--panel);border:1px solid var(--border-b);border-radius:8px;padding:22px;max-width:400px;width:100%}
 .modal h2{font-size:17px;color:var(--gold);margin-bottom:7px;text-align:center}
 .modal p{font-size:11px;color:var(--muted);margin-bottom:16px;text-align:center;line-height:1.6}
@@ -146,7 +174,7 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
 .copt .cn{font-family:'Cinzel',serif;font-size:12px;color:var(--gold);margin-bottom:3px}
 .copt .cd{font-size:10px;color:var(--muted);line-height:1.4}
 
-.name-modal{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.name-modal{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
 .name-modal.show{display:flex}
 .name-box{background:var(--panel);border:1px solid var(--border-b);border-radius:8px;padding:22px;max-width:340px;width:100%}
 .name-box h2{font-size:15px;color:var(--gold);margin-bottom:7px;text-align:center}
@@ -167,70 +195,195 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
 .prestige-btn{background:rgba(128,96,224,.2);border-color:var(--pur);color:var(--pur)}
 .prestige-btn:hover{background:rgba(128,96,224,.4);color:#a080ff}
 
-.google-btn{background:#4285f4;border-color:#4285f4;color:#fff}
-.google-btn:hover{background:#357ae8;color:#fff}
+/* CHAT */
+.chat-container{display:flex;flex-direction:column;height:320px}
+.chat-messages{flex:1;overflow-y:auto;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:11px;line-height:1.8;margin-bottom:8px}
+.chat-msg{padding:2px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.chat-msg .cm-name{color:var(--gold);font-weight:700;font-family:'Cinzel',serif;font-size:10px}
+.chat-msg .cm-name.sir-name{color:var(--rg)}
+.chat-msg .cm-text{color:var(--txt)}
+.chat-msg .cm-time{font-size:9px;color:var(--dim);margin-left:6px}
+.chat-input-row{display:flex;gap:6px}
+.chat-input-row input{flex:1;background:var(--card2);border:1px solid var(--border-b);border-radius:5px;padding:8px 12px;color:var(--txt);font-family:'Lato',sans-serif;font-size:12px;outline:none}
+.chat-input-row input:focus{border-color:var(--gold)}
+.chat-input-row button{padding:8px 14px;background:rgba(201,168,76,.12);border:1px solid var(--border-b);border-radius:5px;color:var(--gold);font-family:'Cinzel',serif;font-size:11px;cursor:pointer}
+.chat-input-row button:hover{background:rgba(201,168,76,.25)}
 
-.login-overlay{position:fixed;inset:0;background:rgba(0,0,0,.98);z-index:300;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px}
-.login-card{background:var(--panel);border:1px solid var(--gold);border-radius:12px;padding:30px;text-align:center;max-width:350px}
-.login-card h2{color:var(--gold);margin-bottom:15px}
-.login-card p{color:var(--muted);margin-bottom:20px;font-size:12px}
-.login-loading{color:var(--gold);margin-top:10px;font-size:11px;display:none}
+/* MASMORRA OFFLINE */
+.dungeon-card{background:linear-gradient(135deg,#1a1025,#0d0e13);border:1px solid rgba(128,96,224,.3);border-radius:6px;padding:13px}
+.dungeon-active{background:linear-gradient(135deg,#1a1025,#0a0a15);border-color:rgba(128,96,224,.7);animation:dungeonPulse 3s infinite}
+@keyframes dungeonPulse{0%,100%{border-color:rgba(128,96,224,.4)}50%{border-color:rgba(128,96,224,.9)}}
+.dungeon-timer{font-size:22px;color:var(--pur);font-family:'Cinzel',serif;text-align:center;margin:10px 0}
+.duration-select{display:flex;gap:5px;flex-wrap:wrap;margin:10px 0}
+.dur-btn{flex:1;padding:7px 4px;background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--muted);font-family:'Cinzel',serif;font-size:10px;cursor:pointer;transition:.2s;text-align:center}
+.dur-btn:hover,.dur-btn.sel{background:rgba(128,96,224,.15);border-color:rgba(128,96,224,.5);color:var(--pur)}
+.dungeon-reward-preview{font-size:10px;color:var(--muted);line-height:1.7;margin:8px 0}
+
+/* INVASÕES */
+.invasion-card{background:linear-gradient(135deg,#1a0a0a,#0d0e13);border:1px solid rgba(200,60,60,.3);border-radius:6px;padding:13px}
+.invasion-countdown{font-size:20px;color:var(--red);font-family:'Cinzel',serif;text-align:center;margin:10px 0}
+.invasion-registered{background:rgba(200,60,60,.1);border:1px solid rgba(200,60,60,.3);border-radius:4px;padding:8px;font-size:11px;color:var(--txt);text-align:center;margin-top:8px}
+
+/* CONQUISTAS */
+.ach-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.ach-card{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:10px;position:relative;overflow:hidden}
+.ach-card.unlocked{border-color:rgba(240,192,64,.4);background:rgba(240,192,64,.04)}
+.ach-icon{font-size:24px;margin-bottom:5px}
+.ach-name{font-family:'Cinzel',serif;font-size:11px;color:var(--gold);margin-bottom:3px}
+.ach-desc{font-size:9px;color:var(--muted);line-height:1.5}
+.ach-prog{font-size:9px;color:var(--pur);margin-top:4px}
+.ach-locked{filter:grayscale(1);opacity:.6}
+.ach-unlock-tag{position:absolute;top:6px;right:6px;font-size:8px;color:var(--rg);background:rgba(240,192,64,.15);border:1px solid rgba(240,192,64,.3);padding:1px 5px;border-radius:8px}
+
+/* TÍTULOS */
+.title-list{display:flex;flex-direction:column;gap:6px}
+.title-row{display:flex;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--border);border-radius:5px;padding:8px 11px}
+.title-row.earned{border-color:rgba(128,96,224,.4)}
+.title-icon{font-size:18px;flex-shrink:0}
+.title-info{flex:1}
+.title-name{font-family:'Cinzel',serif;font-size:11px;color:var(--pur)}
+.title-cond{font-size:9px;color:var(--muted);margin-top:2px}
+.title-equip-btn{padding:4px 9px;border:1px solid rgba(128,96,224,.4);background:transparent;border-radius:4px;color:var(--pur);font-family:'Cinzel',serif;font-size:9px;cursor:pointer}
+.title-equip-btn:hover{background:rgba(128,96,224,.15)}
+.title-equip-btn.active{background:rgba(128,96,224,.2);border-color:var(--pur)}
+
+/* RANKING TABS */
+.rank-tabs{display:flex;gap:5px;margin-bottom:10px}
+.rank-tab{flex:1;padding:6px;background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--muted);font-family:'Cinzel',serif;font-size:10px;cursor:pointer;text-align:center;transition:.2s}
+.rank-tab.on{background:rgba(201,168,76,.12);border-color:var(--border-b);color:var(--gold)}
+
+/* ACCOUNT ACTIONS */
+.account-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+
+.delete-btn{padding:5px 10px;background:rgba(192,64,64,.1);border:1px solid rgba(192,64,64,.4);border-radius:4px;color:var(--red);font-family:'Cinzel',serif;font-size:10px;cursor:pointer}
+.delete-btn:hover{background:rgba(192,64,64,.25)}
+.logout-btn{padding:5px 10px;background:rgba(100,100,100,.1);border:1px solid rgba(150,150,150,.3);border-radius:4px;color:var(--muted);font-family:'Cinzel',serif;font-size:10px;cursor:pointer}
+.logout-btn:hover{background:rgba(100,100,100,.2);color:var(--txt)}
 
 @media(max-width:500px){
-  .topbar h1{font-size:13px}.tb{font-size:9px;padding:7px 3px}.tb-ic{font-size:14px}
+  .topbar h1{font-size:13px}.tb{font-size:8px;padding:6px 2px;min-width:40px}.tb-ic{font-size:13px}
   .inv-grid{grid-template-columns:repeat(4,1fr)}.shop-grid{grid-template-columns:repeat(2,1fr)}
+  .ach-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
 
-<!-- TELA DE LOGIN OBRIGATÓRIA -->
-<div id="loginOverlay" class="login-overlay">
-  <div class="login-card">
-    <h2>⚔ REALM OF IRON</h2>
-    <p>Para entrar no reino, você precisa autenticar com sua conta Google.</p>
-    <button class="abtn google-btn" id="googleLoginBtn" onclick="initGoogleLogin()" style="width:100%;padding:12px">🔑 Entrar com Google</button>
-    <div id="loginLoading" class="login-loading">⏳ Carregando...</div>
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">⚔</div>
+    <h2>REALM OF IRON</h2>
+    <p>Entre com sua conta Google para salvar seu progresso na nuvem e competir com outros aventureiros do reino.</p>
+    <button class="google-signin-btn" onclick="initGoogleLogin()">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Entrar com Google
+    </button>
+    <p style="font-size:9px;color:var(--dim);margin-top:8px">Seus dados são salvos no Firebase. Nenhuma senha necessária.</p>
   </div>
 </div>
 
-<div class="shell" id="gameContainer" style="display:none">
+<!-- NAME SELECTION MODAL (first time) -->
+<div class="modal-bg" id="nameFirstModal" style="display:none;z-index:300">
+  <div class="modal">
+    <h2>Nome do Herói</h2>
+    <p>Escolha o nome pelo qual será conhecido no reino. Você poderá mudá-lo gratuitamente uma vez, e depois a cada 3 meses.</p>
+    <input type="text" id="nameFirstInput" maxlength="16" placeholder="Seu nome de herói..." style="width:100%;background:var(--card2);border:1px solid var(--border-b);border-radius:5px;padding:9px 12px;color:var(--txt);font-size:14px;outline:none;margin-bottom:12px">
+    <button class="abtn pri" style="width:100%;padding:10px" onclick="confirmFirstName()">✔ Confirmar Nome</button>
+  </div>
+</div>
+
+<!-- CLASS MODAL -->
+<div class="modal-bg" id="classModal" style="display:none">
+  <div class="modal">
+    <h2>Escolha sua Classe</h2>
+    <p>Esta escolha é <strong style="color:var(--red)">permanente</strong> e definirá seu destino no reino para sempre. Escolha com sabedoria.</p>
+    <div class="class-opts">
+      <div class="copt" onclick="chooseClass('Guerreiro','⚔','str')">
+        <div class="ci">⚔</div><div class="cn">Guerreiro</div>
+        <div class="cd">Mestre do combate. Alto ATQ e DEF, bônus de HP massivo.</div>
+      </div>
+      <div class="copt" onclick="chooseClass('Mago','🔮','int')">
+        <div class="ci">🔮</div><div class="cn">Mago</div>
+        <div class="cd">Artes arcanas. Alto dano, bônus de crítico e MANA.</div>
+      </div>
+      <div class="copt" onclick="chooseClass('Arqueiro','🏹','agi')">
+        <div class="ci">🏹</div><div class="cn">Arqueiro</div>
+        <div class="cd">Precisão mortal. Alta VELOC e crítico elevado.</div>
+      </div>
+      <div class="copt" onclick="chooseClass('Paladino','✨','pal')">
+        <div class="ci">✨</div><div class="cn">Paladino</div>
+        <div class="cd">Fé e aço. Alta DEF, regenera HP passivamente.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NAME CHANGE MODAL -->
+<div class="name-modal" id="nameModal">
+  <div class="name-box">
+    <h2>Mudar Nome</h2>
+    <p id="nameChangeInfo">Escolha um novo nome para seu personagem.</p>
+    <input type="text" id="nameInput" maxlength="16" placeholder="Novo nome...">
+    <div class="name-row">
+      <button class="abtn" style="flex:1;padding:9px" onclick="cancelName()">Cancelar</button>
+      <button class="abtn pri" style="flex:1;padding:9px" onclick="confirmName()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="shell">
   <div class="topbar">
     <h1>⚔ REALM OF IRON</h1>
-    <div class="online-info"><span class="dot"></span><span id="onl">—</span></div>
-    <div style="display:flex;gap:6px">
-      <span id="userEmailDisplay" style="font-size:10px;color:var(--muted);align-self:center"></span>
-      <button class="abtn" id="googleLogoutBtn" onclick="logoutGoogle()" style="padding:5px 12px;flex:0">🚪 Sair</button>
+    <div class="online-info"><span class="dot"></span><span id="onl">— aventureiros cadastrados</span></div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <span id="topUserInfo" style="font-size:10px;color:var(--muted)"></span>
+      <button class="logout-btn" id="logoutBtn" onclick="doLogout()" style="display:none">🚪 Sair</button>
     </div>
   </div>
 
   <div class="tabbar">
-    <button class="tb" onclick="sw('profile',this)"><span class="tb-ic">🛡</span>Perfil</button>
+    <button class="tb on" onclick="sw('profile',this)"><span class="tb-ic">🛡</span>Perfil</button>
     <button class="tb" onclick="sw('combat',this)"><span class="tb-ic">⚔</span>Batalha</button>
     <button class="tb" onclick="sw('inventory',this)"><span class="tb-ic">🎒</span>Inventário</button>
     <button class="tb" onclick="sw('forge',this)"><span class="tb-ic">🔨</span>Forja</button>
     <button class="tb" onclick="sw('shop',this)"><span class="tb-ic">🛒</span>Loja</button>
     <button class="tb" onclick="sw('missions',this)"><span class="tb-ic">📜</span>Missões</button>
+    <button class="tb" onclick="sw('dungeon',this)"><span class="tb-ic">🗺</span>Masmorra</button>
     <button class="tb" onclick="sw('ranking',this)"><span class="tb-ic">👑</span>Ranking</button>
+    <button class="tb" onclick="sw('achievements',this)"><span class="tb-ic">🏆</span>Conquistas</button>
+    <button class="tb" onclick="sw('invasion',this)"><span class="tb-ic">💀</span>Invasão</button>
+    <button class="tb" onclick="sw('chat',this)"><span class="tb-ic">💬</span>Chat</button>
   </div>
 
-  <!-- Profile Panel -->
-  <div class="panel" id="tab-profile">
+  <!-- PROFILE -->
+  <div class="panel on" id="tab-profile">
     <div class="card">
       <div class="ph">
         <div class="av-wrap"><div class="av" id="av">⚔</div><div class="av-lv" id="av-lv">1</div></div>
         <div class="pi" style="flex:1">
           <h2 id="pname">—</h2>
-          <div class="cbadge" id="pcls">—</div>
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:4px">
+            <div class="cbadge" id="pcls">—</div>
+            <span id="sirBadge" class="sir-badge" style="display:none">⚜ Sir</span>
+            <span id="titleBadge" class="title-badge" style="display:none"></span>
+          </div>
           <div class="ren">💰 Ouro: <strong id="pgold" style="color:var(--gold)">0</strong> &nbsp;|&nbsp; Renome: <strong id="pren">0</strong></div>
-          <div class="ren">✨ Prestígio: <strong id="pprestige" style="color:var(--pur)">0</strong> &nbsp;|&nbsp; Abates: <strong id="pkills">0</strong></div>
-          <div class="ren">💀 Mortes: <strong id="pdeaths" style="color:var(--red)">0</strong></div>
+          <div class="ren">✨ Prestígio: <strong id="pprestige" style="color:var(--pur)">0</strong> &nbsp;|&nbsp; Rank: <span id="prankpos">—</span></div>
+          <div class="ren" style="margin-top:3px">Abates: <strong id="pkills" style="color:var(--txt);font-size:13px">0</strong> &nbsp;|&nbsp; Mortes: <strong id="pdeaths" style="color:var(--red);font-size:13px">0</strong></div>
+          <div class="blessing-badge" id="blessingBadge">🌟 Bênção de Sir — XP +50% | Dano +15%</div>
         </div>
       </div>
       <div class="bl"><span>HP</span><span id="hpl">—</span></div>
       <div class="bw bh"><div class="bf" id="hpb" style="width:100%"></div></div>
       <div class="bl"><span>Experiência</span><span id="xpl">—</span></div>
       <div class="bw bx"><div class="bf" id="xpb" style="width:0%"></div></div>
+      <div class="account-actions" id="accountActions" style="display:none">
+        <button class="abtn" style="flex:0;padding:5px 10px;font-size:10px" onclick="openNameChange()">✏ Mudar Nome</button>
+        <button class="delete-btn" onclick="deleteAccount()">🗑 Excluir Conta</button>
+      </div>
     </div>
     <div class="card">
       <div class="ct">⚡ Atributos</div>
@@ -245,504 +398,1578 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
     </div>
     <div class="card">
       <div class="ct">🗡 Equipamentos</div>
-      <div class="eg" id="equipmentGrid"></div>
+      <div class="eg">
+        <div class="es"><div class="ei">⛑</div><div class="en">ELMO</div><div class="ev" id="eq0">—</div><div class="dura" id="dur0"></div></div>
+        <div class="es"><div class="ei">🛡</div><div class="en">PEITORAL</div><div class="ev" id="eq1">—</div><div class="dura" id="dur1"></div></div>
+        <div class="es"><div class="ei">🗡</div><div class="en">ARMA</div><div class="ev" id="eq2">—</div><div class="dura" id="dur2"></div></div>
+        <div class="es"><div class="ei">👢</div><div class="en">BOTAS</div><div class="ev" id="eq3">—</div><div class="dura" id="dur3"></div></div>
+        <div class="es"><div class="ei">💍</div><div class="en">ANEL</div><div class="ev" id="eq4">—</div><div class="dura" id="dur4"></div></div>
+        <div class="es"><div class="ei">📿</div><div class="en">AMULETO</div><div class="ev" id="eq5">—</div><div class="dura" id="dur5"></div></div>
+        <div class="es"><div class="ei">🧤</div><div class="en">LUVAS</div><div class="ev" id="eq6">—</div><div class="dura" id="dur6"></div></div>
+        <div class="es"><div class="ei">💎</div><div class="en">GEM</div><div class="ev" id="eq7">—</div><div class="dura" id="dur7"></div></div>
+      </div>
+    </div>
+    <!-- Títulos -->
+    <div class="card">
+      <div class="ct">🎖 Títulos</div>
+      <div class="title-list" id="titleList"></div>
     </div>
     <div class="card prestige-bar">
       <div class="ct">🌀 Reencarnação (Prestígio)</div>
       <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Reencarne ao atingir Nv 50 e 5000 Renome. Ganhe bônus permanente +5% em todos atributos!</div>
       <button class="abtn prestige-btn" id="prestigeBtn" onclick="doPrestige()" style="width:100%">🌀 REENCARNAR (Nv 50 + 5000 Renome)</button>
+      <div id="prestigeInfo" style="font-size:10px;color:var(--pur);text-align:center;margin-top:6px"></div>
     </div>
   </div>
 
-  <!-- Combat Panel -->
+  <!-- COMBAT -->
   <div class="panel" id="tab-combat">
     <div class="card">
-      <div class="ct">⚔ Arena</div>
+      <div class="ct">⚔ Arena <span id="cstat" style="margin-left:auto;font-size:9px;padding:2px 7px;border-radius:8px;border:1px solid var(--border);color:var(--muted)">Aguardando</span></div>
       <div class="comb">
-        <div class="fighter hero"><div class="fi" id="cHeroIc">⚔</div><div class="fn" id="cHeroNm">Você</div>
-          <div class="bl"><span>HP</span><span id="cHeroHp">—</span></div><div class="bw bh"><div class="bf" id="cHeroBar"></div></div>
-          <div class="bl"><span>MANA</span><span id="cHeroMana">—</span></div><div class="bw"><div class="bf" id="cHeroManaBar" style="background:var(--pur)"></div></div>
+        <div class="fighter hero">
+          <div class="fi" id="cHeroIc">⚔</div><div class="fn" id="cHeroNm">Você</div>
+          <div class="bl"><span>HP</span><span id="cHeroHp">—</span></div>
+          <div class="bw bh"><div class="bf" id="cHeroBar" style="width:100%"></div></div>
+          <div class="bl"><span>MANA</span><span id="cHeroMana">—</span></div>
+          <div class="bw"><div class="bf" id="cHeroManaBar" style="background:var(--pur);width:100%"></div></div>
         </div>
         <div class="vs">VS</div>
-        <div class="fighter enemy"><div class="fi" id="cEnemyIc">💀</div><div class="fn" id="cEnemyNm">—</div>
-          <div class="bl"><span>HP</span><span id="cEnemyHp">—</span></div><div class="bw bh"><div class="bf" id="cEnemyBar"></div></div>
+        <div class="fighter enemy">
+          <div class="fi" id="cEnemyIc">💀</div><div class="fn" id="cEnemyNm">—</div>
+          <div class="bl"><span>HP</span><span id="cEnemyHp">—</span></div>
+          <div class="bw bh"><div class="bf" id="cEnemyBar" style="width:0%"></div></div>
         </div>
       </div>
       <div class="skillbar" id="skillbar"></div>
       <div class="potion-bar" id="potionBar"></div>
     </div>
-    <div class="card"><div class="clog" id="clog"><div class="ll sys">⚔ Sistema idle iniciado. Escolha um inimigo!</div></div></div>
-    <div class="card">
-      <div style="font-size:10px;margin-bottom:7px">ESCOLHER INIMIGO</div>
+    <div class="card" style="padding:9px"><div class="clog" id="clog"><div class="ll sys">⚔ Sistema idle iniciado. Escolha um inimigo para começar sua jornada!</div></div></div>
+    <div class="card" style="padding:10px">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:7px;font-family:Cinzel,serif">ESCOLHER INIMIGO</div>
       <div style="display:flex;gap:5px;flex-wrap:wrap" id="enemy-btns"></div>
       <div style="display:flex;gap:5px;margin-top:6px">
         <button class="abtn pri" id="autobtn" onclick="toggleAuto()">⚡ Auto: OFF</button>
         <button class="abtn dan" onclick="flee()">🏃 Fugir</button>
+        <button class="abtn" onclick="clearCombatLog()">🗑 Limpar Log</button>
       </div>
     </div>
   </div>
 
-  <div class="panel" id="tab-inventory"><div class="card"><div class="ct">🎒 Inventário</div><div class="inv-grid" id="inv-grid"></div></div></div>
-  <div class="panel" id="tab-forge"><div class="card"><div class="ct">🔨 Forja</div><div class="forge-list" id="forge-list"></div></div></div>
-  <div class="panel" id="tab-shop"><div class="card"><div class="ct">🛒 Loja</div><div class="shop-grid" id="shop-grid"></div></div></div>
-  <div class="panel" id="tab-missions"><div class="card"><div class="ct">📜 Missões</div><div class="ml" id="mlist"></div></div></div>
-  <div class="panel" id="tab-ranking"><div class="card"><div class="ct">👑 Ranking</div><div class="rl" id="rlist"></div></div></div>
-</div>
-
-<!-- Modal de Classe -->
-<div class="modal-bg" id="classModal" style="display:none">
-  <div class="modal">
-    <h2>Escolha sua Classe</h2>
-    <p>Esta escolha é <strong style="color:var(--red)">permanente</strong> e definirá seu destino no reino.</p>
-    <div class="class-opts">
-      <div class="copt" onclick="chooseClass('Guerreiro','⚔','str')"><div class="ci">⚔</div><div class="cn">Guerreiro</div><div class="cd">Alto ATQ e DEF, bônus de HP</div></div>
-      <div class="copt" onclick="chooseClass('Mago','🔮','int')"><div class="ci">🔮</div><div class="cn">Mago</div><div class="cd">Alto dano, bônus de crítico e MANA</div></div>
-      <div class="copt" onclick="chooseClass('Arqueiro','🏹','agi')"><div class="ci">🏹</div><div class="cn">Arqueiro</div><div class="cd">Alta VELOC e crítico elevado</div></div>
-      <div class="copt" onclick="chooseClass('Paladino','✨','pal')"><div class="ci">✨</div><div class="cn">Paladino</div><div class="cd">Alta DEF, regenera HP passivamente</div></div>
+  <!-- INVENTORY -->
+  <div class="panel" id="tab-inventory">
+    <div class="card">
+      <div class="ct">🎒 Inventário <span id="inv-count" style="margin-left:auto;font-size:10px;color:var(--muted)">0/30</span></div>
+      <div class="inv-grid" id="inv-grid"></div>
+    </div>
+    <div class="card">
+      <div class="ct" style="margin-bottom:9px">📦 Materiais</div>
+      <div id="mat-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
+    <div class="card">
+      <div class="ct" style="margin-bottom:9px">🧪 Poções</div>
+      <div id="potion-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
     </div>
   </div>
-</div>
 
-<!-- Modal de Nome -->
-<div class="name-modal" id="nameModal">
-  <div class="name-box">
-    <h2>Nome do Personagem</h2>
-    <p>Escolha o nome pelo qual será conhecido no reino.</p>
-    <input type="text" id="nameInput" maxlength="16" placeholder="Seu nome de herói...">
-    <div class="name-row">
-      <button class="abtn" style="flex:1" onclick="cancelName()">Cancelar</button>
-      <button class="abtn pri" style="flex:1" onclick="confirmNameAndProceed()">Confirmar</button>
+  <!-- FORGE -->
+  <div class="panel" id="tab-forge">
+    <div class="card">
+      <div class="ct">🔨 Forja <span style="margin-left:auto;font-size:10px">Nível: <strong id="forgeLv">1</strong> | Bônus: +<span id="forgeBonus">0</span>%</span></div>
+      <div class="forge-level">
+        <span>⚒ XP de Forja: <span id="forgeXp">0</span>/<span id="forgeXpNext">100</span></span>
+        <div class="bw" style="margin-top:5px"><div class="bf" id="forgeBar" style="background:var(--gold);width:0%"></div></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:10px;line-height:1.6">
+        🟤 Branco: Comum &nbsp;|&nbsp; 🟢 Verde: Incomum &nbsp;|&nbsp; 🔵 Azul: Raro &nbsp;|&nbsp; 🟣 Roxo: Épico &nbsp;|&nbsp; 🟠 Laranja: Lendário &nbsp;|&nbsp; 🔴 Vermelho: Amaldiçoado
+      </div>
+      <div class="forge-list" id="forge-list"></div>
     </div>
   </div>
-</div>
 
-<div class="toast" id="toast"></div>
+  <!-- SHOP -->
+  <div class="panel" id="tab-shop">
+    <div class="card">
+      <div class="ct">🛒 Loja do Mercador</div>
+      <div class="shop-grid" id="shop-grid"></div>
+      <div style="margin-top:10px;text-align:center;font-size:10px;color:var(--muted)">💰 Ouro: <span id="shopGold">0</span></div>
+    </div>
+  </div>
+
+  <!-- MISSIONS -->
+  <div class="panel" id="tab-missions">
+    <div class="card">
+      <div class="ct">🌟 Missões Iniciais (Tutorial)</div>
+      <div class="ml" id="tutorial-list"></div>
+    </div>
+    <div class="card">
+      <div class="ct">📜 Missões Diárias <span id="reset-timer" style="margin-left:auto;font-size:9px;color:var(--muted)"></span></div>
+      <div class="ml" id="mlist"></div>
+    </div>
+    <div class="card">
+      <div class="ct">🌍 Masmorras (Difíceis)</div>
+      <div class="ml" id="dlist"></div>
+    </div>
+    <div class="card">
+      <div class="ct">👑 Desafios</div>
+      <div class="ml" id="weeklyBoss"></div>
+    </div>
+  </div>
+
+  <!-- DUNGEON OFFLINE -->
+  <div class="panel" id="tab-dungeon">
+    <div class="dungeon-card" id="dungeonCard">
+      <div class="ct" style="border-color:rgba(128,96,224,.3)">🗺 Masmorra Offline</div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.7">Envie seu herói para explorar masmorras mesmo enquanto estiver offline. Você <strong style="color:var(--red)">não pode sair da masmorra</strong> antes do tempo terminar, mas receberá muito mais recursos, XP e itens raros!</p>
+      <div id="dungeonContent"></div>
+    </div>
+    <div class="card">
+      <div class="ct">📊 Recompensas por Duração</div>
+      <div style="font-size:11px;color:var(--muted);line-height:2">
+        <div>⏱ <strong style="color:var(--txt)">2h</strong> — XP ×2 | Ouro ×2 | Materiais comuns</div>
+        <div>⏱ <strong style="color:var(--r-uncommon)">4h</strong> — XP ×5 | Ouro ×5 | Materiais incomuns</div>
+        <div>⏱ <strong style="color:var(--r-rare)">6h</strong> — XP ×12 | Ouro ×12 | Itens raros possíveis</div>
+        <div>⏱ <strong style="color:var(--r-epic)">8h</strong> — XP ×25 | Ouro ×25 | Itens épicos possíveis</div>
+        <div>⏱ <strong style="color:var(--r-legendary)">12h</strong> — XP ×60 | Ouro ×60 | Itens lendários possíveis</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RANKING -->
+  <div class="panel" id="tab-ranking">
+    <div class="card">
+      <div class="ct">👑 Rankings <button class="abtn" style="flex:0;padding:2px 8px;margin-left:auto" onclick="loadRanking()">🔄 Atualizar</button></div>
+      <div class="rank-tabs">
+        <button class="rank-tab on" onclick="setRankTab('prestige',this)">🌀 Prestígio</button>
+        <button class="rank-tab" onclick="setRankTab('deaths',this)">💀 Mortes</button>
+      </div>
+      <div class="rl" id="rlist"><div style="color:var(--muted);font-size:12px;padding:20px;text-align:center">Buscando dados dos aventureiros...</div></div>
+    </div>
+  </div>
+
+  <!-- ACHIEVEMENTS -->
+  <div class="panel" id="tab-achievements">
+    <div class="card">
+      <div class="ct">🏆 Conquistas</div>
+      <div class="ach-grid" id="ach-grid"></div>
+    </div>
+  </div>
+
+  <!-- INVASION -->
+  <div class="panel" id="tab-invasion">
+    <div class="invasion-card">
+      <div class="ct" style="border-color:rgba(200,60,60,.3);color:var(--red)">💀 Invasão Diária</div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.7">Todo dia às <strong style="color:var(--red)">21:00</strong>, hordas de monstros invadem o reino! Até 10 aventureiros podem se unir para enfrentá-los. Inscreva-se e apareça na hora!</p>
+      <div class="invasion-countdown" id="invasionCountdown">—</div>
+      <div id="invasionContent"></div>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="panel" id="tab-chat">
+    <div class="card">
+      <div class="ct">💬 Chat Global</div>
+      <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+          <div style="color:var(--muted);font-size:11px;text-align:center;padding:20px">Carregando mensagens...</div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chatInput" maxlength="200" placeholder="Digite sua mensagem...">
+          <button onclick="sendChatMessage()">Enviar</button>
+        </div>
+      </div>
+      <p style="font-size:9px;color:var(--dim);margin-top:8px">Chat monitorado. Conteúdo ofensivo é filtrado automaticamente.</p>
+    </div>
+  </div>
+
+</div><!-- end .shell -->
 
 <script>
-// ========== CONFIGURAÇÃO FIREBASE ==========
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBtBNptJ9TxFlGArwHX9iwDQVv-9GGL9Us",
-  authDomain: "realm-of-iron.firebaseapp.com",
-  projectId: "realm-of-iron",
-  storageBucket: "realm-of-iron.firebasestorage.app",
-  messagingSenderId: "571041801417",
-  appId: "1:571041801417:web:2e0023a1fac20553331918"
+const SK='realm_iron_v9';
+
+// ─── RARIDADE ────────────────────────────────────────────────────
+const RARITIES={
+  common:  {name:'Comum',   color:'var(--r-common)',   cls:'r-common',   mult:1.0,  matMult:1.0},
+  uncommon:{name:'Incomum', color:'var(--r-uncommon)', cls:'r-uncommon', mult:1.3,  matMult:1.5},
+  rare:    {name:'Raro',    color:'var(--r-rare)',      cls:'r-rare',     mult:1.7,  matMult:2.5},
+  epic:    {name:'Épico',   color:'var(--r-epic)',      cls:'r-epic',     mult:2.3,  matMult:4.0},
+  legendary:{name:'Lendário',color:'var(--r-legendary)',cls:'r-legendary',mult:3.5, matMult:8.0},
+  cursed:  {name:'Amaldiçoado',color:'var(--r-cursed)',cls:'r-cursed',   mult:3.0,  matMult:6.0},
 };
 
-const STORAGE_KEY = 'realm_iron_v10';
+function rarityClass(r){return RARITIES[r]?RARITIES[r].cls:'r-common';}
+function rarityColor(r){return RARITIES[r]?RARITIES[r].color:'var(--r-common)';}
+function rarityName(r){return RARITIES[r]?RARITIES[r].name:'Comum';}
 
-let G = {
-  hero: { name: '', class: '', icon: '', classType: '', level: 1, xp: 0, xpNext: 100, hp: 100, hpMax: 100, mana: 50, manaMax: 50, atk: 10, def: 6, spd: 8, crit: 5, renown: 0, gold: 100, kills: 0, deaths: 0, prestige: 0, prestigeBonus: 1.0 },
-  combat: { active: false, auto: false, enemy: null, tid: null },
-  inventory: [], materials: {}, potions: { potion: 0, mana_potion: 0, elixir: 0 },
-  equipment: { helm: null, chest: null, weapon: null, boots: null, ring: null, amulet: null, gloves: null, gem: null },
-  durability: {}, userId: null, userEmail: null
+// ─── MATERIAIS ───────────────────────────────────────────────────
+const MATS={
+  osso:{name:'Osso',icon:'🦴',tier:1,price:5},pele:{name:'Pele',icon:'🟫',tier:1,price:4},
+  pedra:{name:'Pedra',icon:'🪨',tier:1,price:3},madeira:{name:'Madeira',icon:'🪵',tier:1,price:3},
+  ferro:{name:'Ferro',icon:'⚙',tier:2,price:12},couro:{name:'Couro Fino',icon:'🟤',tier:2,price:10},
+  cristal:{name:'Cristal',icon:'💠',tier:2,price:20},veneno:{name:'Veneno',icon:'🧪',tier:2,price:15},
+  aco:{name:'Aço',icon:'🔩',tier:3,price:35},runa:{name:'Runa',icon:'🔷',tier:3,price:50},
+  dragao:{name:'Escama Dragão',icon:'🐉',tier:3,price:80},mana_gem:{name:'Gema Mana',icon:'💎',tier:3,price:60},
+  adamant:{name:'Adamante',icon:'⬛',tier:4,price:150},celestial:{name:'Pó Celestial',icon:'✨',tier:4,price:200},
+  alma:{name:'Cristal Alma',icon:'🔮',tier:4,price:180},sangue:{name:'Rubi Sangue',icon:'❤',tier:4,price:250},
 };
 
-// Inimigos base
-const BASE_ENEMIES = [
-  { name: 'Goblin', icon: '👺', hpM: 0.8, atkMin: 4, atkMax: 9, defM: 0.3, xpM: 0.8, renM: 0.8, goldM: 2, minLv: 1 },
-  { name: 'Lobo', icon: '🐺', hpM: 1.2, atkMin: 7, atkMax: 14, defM: 0.4, xpM: 1.2, renM: 1.2, goldM: 4, minLv: 1 },
-  { name: 'Orc', icon: '👹', hpM: 2.5, atkMin: 15, atkMax: 28, defM: 1.0, xpM: 2, renM: 3, goldM: 12, minLv: 5 },
-  { name: 'Troll', icon: '🧌', hpM: 4, atkMin: 25, atkMax: 45, defM: 1.6, xpM: 3.5, renM: 6, goldM: 25, minLv: 15 },
-  { name: 'Dragão', icon: '🐉', hpM: 12, atkMin: 50, atkMax: 90, defM: 3, xpM: 10, renM: 20, goldM: 80, minLv: 20 }
+const SHOP_ITEMS=[
+  {name:'Poção de Cura',icon:'🧪',type:'potion',effect:{hp:80},price:30,desc:'Restaura 80 HP'},
+  {name:'Poção de Mana',icon:'💙',type:'mana_potion',effect:{mana:50},price:25,desc:'Restaura 50 MANA'},
+  {name:'Elixir Menor',icon:'✨',type:'elixir',effect:{hp:150,mana:80},price:100,desc:'Restaura 150 HP + 80 MANA'},
+  {name:'Ferro',icon:'⚙',type:'material',material:'ferro',qty:3,price:30,desc:'3x Ferro'},
+  {name:'Cristal',icon:'💠',type:'material',material:'cristal',qty:2,price:35,desc:'2x Cristal'},
+  {name:'Runa',icon:'🔷',type:'material',material:'runa',qty:1,price:45,desc:'1x Runa'},
 ];
 
-let firebaseApp = null;
-let db = null;
-let auth = null;
+const BASE_ENEMIES=[
+  {name:'Goblin',icon:'👺',hpM:0.8,atkMin:4,atkMax:9,defM:0.3,xpM:0.8,renM:0.8,goldM:2,drops:['osso','pele','pedra'],minLv:1,type:'low'},
+  {name:'Lobo',icon:'🐺',hpM:1.2,atkMin:7,atkMax:14,defM:0.4,xpM:1.2,renM:1.2,goldM:4,drops:['pele','madeira','osso'],minLv:1,type:'low'},
+  {name:'Orc',icon:'👹',hpM:2.5,atkMin:15,atkMax:28,defM:1.0,xpM:2,renM:3,goldM:12,drops:['ferro','couro','cristal'],minLv:5,type:'mid'},
+  {name:'Nécromante',icon:'💀',hpM:2.0,atkMin:18,atkMax:32,defM:0.8,xpM:2.5,renM:4,goldM:15,drops:['veneno','cristal','runa'],minLv:8,type:'mid'},
+  {name:'Troll',icon:'🧌',hpM:4,atkMin:25,atkMax:45,defM:1.6,xpM:3.5,renM:6,goldM:25,drops:['aco','runa','ferro'],minLv:15,type:'high'},
+  {name:'Dragão',icon:'🐉',hpM:12,atkMin:50,atkMax:90,defM:3,xpM:10,renM:20,goldM:80,drops:['dragao','mana_gem','aco'],minLv:20,type:'dragon'},
+  {name:'Lich',icon:'👁',hpM:8,atkMin:40,atkMax:75,defM:2.5,xpM:8,renM:18,goldM:60,drops:['alma','celestial','runa'],minLv:30,type:'high'},
+  {name:'Leviatã',icon:'🌊',hpM:20,atkMin:70,atkMax:130,defM:5,xpM:18,renM:40,goldM:120,drops:['adamant','alma','sangue'],minLv:40,type:'high'},
+];
 
-// Inicializar Firebase
-function initFirebase() {
-  if (firebaseApp) return true;
-  try {
-    if (typeof firebase === 'undefined') {
-      console.log('Aguardando Firebase carregar...');
-      return false;
-    }
-    firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
-    db = firebase.firestore();
-    auth = firebase.auth();
-    console.log('Firebase inicializado!');
-    return true;
-  } catch(e) {
-    console.error('Erro Firebase:', e);
-    return false;
+const DAILY_BOSS={name:'Guardião Ancião',icon:'👑',hpM:25,atkMin:80,atkMax:150,defM:8,xpM:40,renM:80,goldM:400,drops:['celestial','alma','adamant'],minLv:1};
+const WEEKLY_BOSS={name:'Avatar da Destruição',icon:'👿',hpM:60,atkMin:140,atkMax:240,defM:15,xpM:100,renM:200,goldM:1000,drops:['sangue','adamant','celestial'],minLv:1};
+
+// ─── RECEITAS com raridades ────────────────────────────────────────
+const RECIPES=[
+  {name:'Espada de Ferro',icon:'🗡',slot:'weapon',rarity:'common',minLv:1,reqs:{ferro:2,madeira:2},baseStats:{atk:6},desc:'+6 ATQ',maxDura:40,forgeXp:8,value:30,goldCost:20},
+  {name:'Armadura de Couro',icon:'🛡',slot:'chest',rarity:'common',minLv:2,reqs:{pele:4,couro:1},baseStats:{def:8},desc:'+8 DEF',maxDura:40,forgeXp:8,value:25,goldCost:15},
+  {name:'Espada de Ferro+',icon:'🗡',slot:'weapon',rarity:'uncommon',minLv:3,reqs:{ferro:3,madeira:2},baseStats:{atk:8},desc:'+8 ATQ',maxDura:50,forgeXp:10,value:40,goldCost:40},
+  {name:'Armadura de Couro+',icon:'🛡',slot:'chest',rarity:'uncommon',minLv:4,reqs:{pele:4,couro:2},baseStats:{def:10},desc:'+10 DEF',maxDura:50,forgeXp:10,value:35,goldCost:35},
+  {name:'Botas Velozes',icon:'👢',slot:'boots',rarity:'uncommon',minLv:3,reqs:{couro:3,pele:2},baseStats:{spd:8},desc:'+8 VEL',maxDura:40,forgeXp:10,value:30,goldCost:30},
+  {name:'Elmo de Ferro',icon:'⛑',slot:'helm',rarity:'uncommon',minLv:4,reqs:{ferro:4,osso:3},baseStats:{def:7,hp:30},desc:'+7 DEF +30 HP',maxDura:50,forgeXp:10,value:45,goldCost:45},
+  {name:'Lâmina de Aço',icon:'⚔',slot:'weapon',rarity:'rare',minLv:15,reqs:{aco:4,ferro:3,runa:1},baseStats:{atk:22},desc:'+22 ATQ',maxDura:70,forgeXp:25,value:120,goldCost:120},
+  {name:'Armadura de Aço',icon:'🛡',slot:'chest',rarity:'rare',minLv:16,reqs:{aco:5,ferro:4},baseStats:{def:25},desc:'+25 DEF',maxDura:70,forgeXp:25,value:110,goldCost:100},
+  {name:'Elmo Rúnico',icon:'⛑',slot:'helm',rarity:'rare',minLv:18,reqs:{aco:3,runa:3,cristal:2},baseStats:{def:15,hp:50},desc:'+15 DEF +50 HP',maxDura:65,forgeXp:25,value:130,goldCost:130},
+  {name:'Anel de Cristal',icon:'💍',slot:'ring',rarity:'rare',minLv:12,reqs:{cristal:4,runa:2},baseStats:{crit:6,mana:40},desc:'+6% CRI +40 MANA',maxDura:45,forgeXp:20,value:100,goldCost:100},
+  {name:'Garra do Dragão',icon:'🐉',slot:'weapon',rarity:'epic',minLv:25,reqs:{dragao:3,aco:5,mana_gem:2},baseStats:{atk:45,crit:5},desc:'+45 ATQ +5% CRI',maxDura:100,forgeXp:50,value:300,goldCost:300},
+  {name:'Escudo Celestial',icon:'✨',slot:'chest',rarity:'epic',minLv:28,reqs:{celestial:2,aco:6,dragao:2},baseStats:{def:50,hp:120},desc:'+50 DEF +120 HP',maxDura:100,forgeXp:50,value:350,goldCost:350},
+  {name:'Anel da Alma',icon:'💍',slot:'ring',rarity:'epic',minLv:32,reqs:{alma:3,celestial:2,mana_gem:3},baseStats:{atk:20,crit:10,mana:80},desc:'+20 ATQ +10% CRI +80 MANA',maxDura:80,forgeXp:50,value:280,goldCost:280},
+  {name:'Lâmina Sanguínea',icon:'🔴',slot:'weapon',rarity:'epic',minLv:40,reqs:{sangue:4,adamant:3,alma:2},baseStats:{atk:80,crit:12},desc:'+80 ATQ +12% CRI',maxDura:120,forgeXp:75,value:500,goldCost:500},
+  {name:'Armadura Adamante',icon:'⬛',slot:'chest',rarity:'epic',minLv:42,reqs:{adamant:5,alma:2,celestial:2},baseStats:{def:90,hp:200},desc:'+90 DEF +200 HP',maxDura:120,forgeXp:75,value:550,goldCost:550},
+  {name:'Espada Lendária',icon:'🌟',slot:'weapon',rarity:'legendary',minLv:45,reqs:{sangue:6,adamant:5,celestial:3,alma:3},baseStats:{atk:140,crit:18},desc:'+140 ATQ +18% CRI',maxDura:160,forgeXp:120,value:1200,goldCost:1000},
+  {name:'Armadura das Lendas',icon:'🏆',slot:'chest',rarity:'legendary',minLv:47,reqs:{adamant:8,celestial:4,alma:4,dragao:3},baseStats:{def:160,hp:400},desc:'+160 DEF +400 HP',maxDura:160,forgeXp:120,value:1400,goldCost:1200},
+  {name:'Lâmina Amaldiçoada',icon:'🩸',slot:'weapon',rarity:'cursed',minLv:35,reqs:{sangue:8,veneno:4,alma:5},baseStats:{atk:100,crit:20},desc:'+100 ATQ +20% CRI (maldito)',maxDura:80,forgeXp:90,value:800,goldCost:800},
+];
+
+const TUTORIAL_MISSIONS=[
+  {id:'t_kill1',name:'Primeiro Passo',icon:'🗡',desc:'Derrote 1 inimigo',target:1,renR:10,goldR:50,xpR:50,type:'kills'},
+  {id:'t_forge1',name:'Aprendiz de Forja',icon:'🔨',desc:'Forje 1 item',target:1,goldR:100,xpR:50,type:'forge'},
+  {id:'t_level5',name:'Caminho do Herói',icon:'📈',desc:'Alcance Nível 5',target:5,renR:50,goldR:200,xpR:100,type:'level'},
+];
+
+// ─── CONQUISTAS ────────────────────────────────────────────────────
+const ACHIEVEMENTS=[
+  {id:'kills_100',name:'Caçador',icon:'🗡',desc:'Derrote 100 inimigos',target:100,stat:'kills',reward:'Título: Caçador'},
+  {id:'kills_1000',name:'Exterminador',icon:'⚔',desc:'Derrote 1.000 inimigos',target:1000,stat:'kills',reward:'Título: Exterminador'},
+  {id:'kills_10000',name:'Aniquilador de Mundos',icon:'💀',desc:'Derrote 10.000 inimigos',target:10000,stat:'kills',reward:'Título: Lenda das Batalhas'},
+  {id:'kills_100000',name:'O Flagelo',icon:'☠',desc:'Derrote 100.000 inimigos — conquista máxima!',target:100000,stat:'kills',reward:'Título: O Flagelo'},
+  {id:'deaths_10',name:'Teimoso',icon:'💔',desc:'Morra 10 vezes em combate',target:10,stat:'deaths',reward:'Título: Imortal Relutante'},
+  {id:'deaths_100',name:'Eterno Cadáver',icon:'🪦',desc:'Morra 100 vezes em combate',target:100,stat:'deaths',reward:'Título: Espírito Persistente'},
+  {id:'deaths_1000',name:'Mártir do Combate',icon:'👻',desc:'Morra 1.000 vezes em combate',target:1000,stat:'deaths',reward:'Título: Fantasma de Ferro'},
+  {id:'deaths_10000',name:'A Morte te Conhece',icon:'💀',desc:'Morra 10.000 vezes em combate',target:10000,stat:'deaths',reward:'Título: Inabalável'},
+  {id:'prestige_1',name:'Renascido',icon:'🌀',desc:'Atinja o Prestígio 1',target:1,stat:'prestige',reward:'Título: O Renascido'},
+  {id:'prestige_5',name:'Lenda Viva',icon:'🌟',desc:'Atinja o Prestígio 5',target:5,stat:'prestige',reward:'Título: Lenda Viva'},
+  {id:'forge_50',name:'Ferreiro Mestre',icon:'🔨',desc:'Forje 50 itens',target:50,stat:'forge',reward:'Título: Ferreiro das Eras'},
+  {id:'orc_500',name:'Açougueiro dos Orcs',icon:'👹',desc:'Mate 500 Orcs',target:500,stat:'midKills',reward:'Título: Domador de Orcs'},
+  {id:'dragon_10',name:'Matador de Dragões',icon:'🐉',desc:'Mate 10 Dragões',target:10,stat:'dragonKill',reward:'Título: Lâmina Dragônica'},
+  {id:'gold_10000',name:'Magnata',icon:'💰',desc:'Acumule 10.000 de Ouro de uma vez',target:10000,stat:'goldOnce',reward:'Título: O Rico'},
+];
+
+// ─── TÍTULOS ────────────────────────────────────────────────────────
+const TITLE_DEFS=[
+  {id:'tit_hunter',name:'Caçador',cond:'Derrote 100 inimigos',icon:'🗡',achId:'kills_100'},
+  {id:'tit_exterminator',name:'Exterminador',cond:'Derrote 1.000 inimigos',icon:'⚔',achId:'kills_1000'},
+  {id:'tit_legend',name:'Lenda das Batalhas',cond:'Derrote 10.000 inimigos',icon:'💀',achId:'kills_10000'},
+  {id:'tit_scourge',name:'O Flagelo',cond:'Derrote 100.000 inimigos',icon:'☠',achId:'kills_100000'},
+  {id:'tit_immortal',name:'Imortal Relutante',cond:'Morra 10 vezes',icon:'💔',achId:'deaths_10'},
+  {id:'tit_spirit',name:'Espírito Persistente',cond:'Morra 100 vezes',icon:'👻',achId:'deaths_100'},
+  {id:'tit_ghost',name:'Fantasma de Ferro',cond:'Morra 1.000 vezes',icon:'🪦',achId:'deaths_1000'},
+  {id:'tit_unbreakable',name:'Inabalável',cond:'Morra 10.000 vezes',icon:'💀',achId:'deaths_10000'},
+  {id:'tit_reborn',name:'O Renascido',cond:'Prestígio 1',icon:'🌀',achId:'prestige_1'},
+  {id:'tit_livelgend',name:'Lenda Viva',cond:'Prestígio 5',icon:'🌟',achId:'prestige_5'},
+  {id:'tit_blacksmith',name:'Ferreiro das Eras',cond:'Forje 50 itens',icon:'🔨',achId:'forge_50'},
+  {id:'tit_orcslayer',name:'Domador de Orcs',cond:'Mate 500 Orcs',icon:'👹',achId:'orc_500'},
+  {id:'tit_dragonblade',name:'Lâmina Dragônica',cond:'Mate 10 Dragões',icon:'🐉',achId:'dragon_10'},
+  {id:'tit_rich',name:'O Rico',cond:'Acumule 10k de Ouro',icon:'💰',achId:'gold_10000'},
+];
+
+function generateDailyMissions(){
+  const types=['kills','streak','drops'];const targets=[10,3,15];const rewards=[80,100,60];
+  return types.map((type,i)=>({id:`d_${Date.now()}_${i}`,name:`Missão ${['de Combate','de Glória','de Coleta'][i]}`,icon:['⚔','🔥','📦'][i],
+    desc:`${['Elimine','Vença','Colete'][i]} ${targets[i]} ${['inimigos','batalhas seguidas','materiais'][i]}`,
+    type,target:targets[i],renR:rewards[i],xpR:rewards[i]*10,goldR:rewards[i]*2,expires:Date.now()+86400000}));
+}
+
+function generateWeeklyMissions(){
+  const types=['dragonKill','midKills','highKills'];const targets=[2,15,8];const rewards=[400,300,500];
+  return types.map((type,i)=>({id:`w_${Date.now()}_${i}`,name:`Semanal ${['Dragão','Masmorra','Épico'][i]}`,icon:['🐉','🗼','👑'][i],
+    desc:`${['Derrote','Elimine','Derrote'][i]} ${targets[i]} ${['Dragões','Orcs/Nécromantes','Trolls/Liches'][i]}`,
+    type,target:targets[i],renR:rewards[i],xpR:rewards[i]*15,goldR:rewards[i]*5,expires:Date.now()+604800000}));
+}
+
+const SKILLS_BY_CLASS={
+  str:[
+    {name:'Golpe Poderoso',cost:25,desc:'250% dano',dmgMult:2.5,effect:(hero,enemy)=>{let dmg=Math.max(1,Math.floor(hero.atk*2.5-enemy.def));return{damage:dmg,text:`💥 Golpe Poderoso: ${dmg} dano!`}}},
+    {name:'Grito de Guerra',cost:15,desc:'+15% ATQ/3t',dmgMult:0,effect:(hero,enemy)=>{hero.buffAtk=(hero.buffAtk||0)+0.15;hero.buffTurns=3;return{damage:0,text:'🗣 Grito de Guerra! ATQ +15% por 3 turnos!'}}}
+  ],
+  int:[
+    {name:'Bola de Fogo',cost:30,desc:'300% dano mágico',dmgMult:3.0,effect:(hero,enemy)=>{let dmg=Math.max(1,Math.floor(hero.atk*3.0-enemy.def));return{damage:dmg,text:`🔥 Bola de Fogo: ${dmg} dano!`}}},
+    {name:'Escudo Arcano',cost:20,desc:'+20 DEF/3t',dmgMult:0,effect:(hero,enemy)=>{hero.buffDef=(hero.buffDef||0)+20;hero.buffTurns=3;return{damage:0,text:'🛡 Escudo Arcano! DEF +20 por 3 turnos!'}}}
+  ],
+  agi:[
+    {name:'Chuva de Flechas',cost:20,desc:'200% dano',dmgMult:2.0,effect:(hero,enemy)=>{let dmg=Math.max(1,Math.floor(hero.atk*2.0-enemy.def));return{damage:dmg,text:`🏹 Chuva de Flechas: ${dmg} dano!`}}},
+    {name:'Esquiva Ágil',cost:15,desc:'+30% esquiva/2t',dmgMult:0,effect:(hero,enemy)=>{hero.buffDodge=0.3;hero.buffTurns=2;return{damage:0,text:'💨 Esquiva Ágil! Esquiva +30%!'}}}
+  ],
+  pal:[
+    {name:'Golpe Sagrado',cost:20,desc:'200% dano + cura',dmgMult:2.0,effect:(hero,enemy)=>{let dmg=Math.max(1,Math.floor(hero.atk*2.0-enemy.def));let heal=Math.floor(hero.hpMax*0.1);hero.hp=Math.min(hero.hpMax,hero.hp+heal);return{damage:dmg,text:`✨ Golpe Sagrado: ${dmg} dano! +${heal} HP!`}}},
+    {name:'Bênção da Luz',cost:25,desc:'Cura 25% HP',dmgMult:0,effect:(hero,enemy)=>{let heal=Math.floor(hero.hpMax*0.25);hero.hp=Math.min(hero.hpMax,hero.hp+heal);return{damage:0,text:`🌟 Bênção da Luz: +${heal} HP!`}}}
+  ]
+};
+
+// ─── ESTADO ──────────────────────────────────────────────────────
+let G={
+  hero:{name:'',class:'',icon:'',classType:'',level:1,xp:0,xpNext:100,hp:100,hpMax:100,mana:50,manaMax:50,atk:10,def:6,spd:8,crit:5,renown:0,gold:100,kills:0,deaths:0,prestige:0,prestigeBonus:1.0,equippedTitle:'',hasSirBlessing:false},
+  combat:{active:false,auto:false,enemy:null,tid:null,buffTurns:0,buffAtk:0,buffDef:0,buffDodge:0,skillAuto:[],autoPotion:false},
+  streak:0,inventory:[],materials:{},
+  potions:{potion:0,mana_potion:0,elixir:0},
+  equipment:{helm:null,chest:null,weapon:null,boots:null,ring:null,amulet:null,gloves:null,gem:null},
+  durability:{},
+  missions:{tutorial:{},daily:{},weekly:{}},
+  progress:{kills:0,streak:0,dragonKill:0,drops:0,lowKills:0,midKills:0,highKills:0,forge:0,level:1,deaths:0,prestige:0,goldOnce:0},
+  achievements:{},titles:[],
+  lastDate:'',lastWeek:'',dailyBossKilled:false,weeklyBossKilled:false,skillCooldown:0,
+  forgeLevel:1,forgeXp:0,forgeXpNext:100,
+  dailyMissions:[],weeklyMissions:[],
+  userId:null,userEmail:null,
+  dungeon:{active:false,startTime:null,endTime:null,duration:null},
+  invasion:{registered:false,lastDate:''},
+  nameChangeCount:0,nameLastChanged:null,
+};
+
+function save(){try{localStorage.setItem(SK,JSON.stringify(G));syncToFirebase();}catch(e){}}
+function load(){try{const d=localStorage.getItem(SK);if(d){const p=JSON.parse(d);Object.assign(G,p);G.combat={active:false,auto:false,enemy:null,tid:null,buffTurns:0,buffAtk:0,buffDef:0,buffDodge:0,skillAuto:G.combat?.skillAuto||[],autoPotion:G.combat?.autoPotion||false};}}catch(e){}}
+
+function brasiliaDate(){return new Date().toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});}
+function getWeekNumber(){const d=new Date();const start=new Date(d.getFullYear(),0,1);return Math.ceil(((d-start)/86400000+start.getDay()+1)/7);}
+
+function checkReset(){
+  const today=brasiliaDate(),currentWeek=getWeekNumber();
+  if(G.lastDate!==today){
+    G.lastDate=today;G.dailyBossKilled=false;
+    G.dailyMissions=generateDailyMissions();
+    G.progress={kills:0,streak:0,dragonKill:0,drops:0,lowKills:0,midKills:0,highKills:0,forge:0,level:G.hero.level,deaths:0,prestige:G.hero.prestige,goldOnce:0};
+    G.missions.daily={};G.streak=0;
+    toast('🌅 Missões diárias reiniciadas!');save();
+  }
+  if(G.lastWeek!==currentWeek){
+    G.lastWeek=currentWeek;G.weeklyBossKilled=false;G.weeklyMissions=generateWeeklyMissions();G.missions.weekly={};
+    toast('⭐ Missões semanais reiniciadas!');save();
   }
 }
 
-// Aguardar Firebase carregar
-function waitForFirebase() {
-  return new Promise((resolve) => {
-    if (typeof firebase !== 'undefined' && firebase.initializeApp) {
-      resolve(initFirebase());
-    } else {
-      setTimeout(() => resolve(waitForFirebase()), 200);
+// ─── FORGE ───────────────────────────────────────────────────────
+function addForgeXp(amt){
+  G.forgeXp+=amt;
+  while(G.forgeXp>=G.forgeXpNext){G.forgeXp-=G.forgeXpNext;G.forgeLevel++;G.forgeXpNext=Math.floor(G.forgeXpNext*1.3);toast(`🔨 Forja Lv${G.forgeLevel}!`);}
+  updateForgeUI();
+}
+function getForgeBonus(){return(G.forgeLevel-1)*5;}
+function applyForgeBonus(stats){const b=1+(getForgeBonus()/100);const s={};Object.entries(stats).forEach(([k,v])=>{s[k]=Math.floor(v*b);});return s;}
+function updateForgeUI(){
+  const lvEl=document.getElementById('forgeLv');if(lvEl)lvEl.textContent=G.forgeLevel;
+  const bonEl=document.getElementById('forgeBonus');if(bonEl)bonEl.textContent=getForgeBonus();
+  const xpEl=document.getElementById('forgeXp');if(xpEl)xpEl.textContent=G.forgeXp;
+  const nEl=document.getElementById('forgeXpNext');if(nEl)nEl.textContent=G.forgeXpNext;
+  const bEl=document.getElementById('forgeBar');if(bEl)bEl.style.width=(G.forgeXp/G.forgeXpNext*100)+'%';
+}
+
+function applyPrestigeBonus(val){return Math.floor(val*G.hero.prestigeBonus);}
+
+function scaledE(base,isBoss=false){
+  const lv=G.hero.level,sc=1+(lv-1)*0.15,bm=isBoss?1.5:1,bp=G.hero.prestigeBonus;
+  return{name:base.name,icon:base.icon,baseName:base.name,btype:base.type||'normal',
+    hp:Math.floor(base.hpM*20*sc*bm),hpMax:Math.floor(base.hpM*20*sc*bm),
+    atk:Math.floor(((base.atkMin+(base.atkMax-base.atkMin)*Math.random())*sc*bm)),
+    def:Math.floor(base.defM*5*sc*bm),
+    xp:Math.floor(base.xpM*18*sc*bp),ren:Math.floor(base.renM*4*sc*bm),
+    gold:Math.floor(base.goldM*sc*bm*(0.7+Math.random()*0.8)),drops:base.drops};
+}
+
+function doPrestige(){
+  if(G.hero.level>=50&&G.hero.renown>=5000){
+    G.hero.prestige++;G.hero.prestigeBonus=1+(G.hero.prestige*0.05);
+    G.hero.level=1;G.hero.xp=0;G.hero.xpNext=100;G.hero.renown=0;
+    G.hero.gold=Math.floor(G.hero.gold*0.3);
+    G.hero.hpMax=Math.floor(100*G.hero.prestigeBonus);G.hero.hp=G.hero.hpMax;
+    G.hero.manaMax=Math.floor(50*G.hero.prestigeBonus);G.hero.mana=G.hero.manaMax;
+    G.hero.atk=Math.floor(10*G.hero.prestigeBonus);G.hero.def=Math.floor(6*G.hero.prestigeBonus);
+    G.hero.spd=Math.floor(8*G.hero.prestigeBonus);G.hero.crit=5;
+    G.progress.prestige=G.hero.prestige;
+    checkAchievements();
+    toast(`🌀 REENCARNAÇÃO ${G.hero.prestige}! Bônus +${(G.hero.prestigeBonus-1)*100}%!`);
+    save();updateProfile();rebuildEBtns();
+  } else toast(`❌ Requer Nível 50 e 5000 Renome. (Nv${G.hero.level}|${G.hero.renown} Ren)`);
+}
+
+function addPotion(type){G.potions[type]=(G.potions[type]||0)+1;}
+function usePotion(type){
+  if(!(G.potions[type]>0)){toast('❌ Sem poção!');return;}
+  G.potions[type]--;
+  if(type==='potion'){G.hero.hp=Math.min(G.hero.hpMax,G.hero.hp+80);toast('🧪 +80 HP');}
+  else if(type==='mana_potion'){G.hero.mana=Math.min(G.hero.manaMax,G.hero.mana+50);toast('💙 +50 MANA');}
+  else if(type==='elixir'){G.hero.hp=Math.min(G.hero.hpMax,G.hero.hp+150);G.hero.mana=Math.min(G.hero.manaMax,G.hero.mana+80);toast('✨ +150HP +80MP');}
+  updateProfile();save();renderInventory();
+}
+
+function buyShopItem(item){
+  if(G.hero.gold>=item.price){
+    G.hero.gold-=item.price;
+    if(item.type==='potion'||item.type==='mana_potion'||item.type==='elixir'){addPotion(item.type);toast(`🛒 Comprou ${item.name}!`);}
+    else if(item.type==='material'){if(!G.materials[item.material])G.materials[item.material]=0;G.materials[item.material]+=item.qty;toast(`🛒 ${item.qty}x ${MATS[item.material].name}!`);}
+    save();updateProfile();renderShop();renderInventory();
+  } else toast('💰 Ouro insuficiente!');
+}
+
+function renderShop(){
+  const grid=document.getElementById('shop-grid');if(!grid)return;
+  const ge=document.getElementById('shopGold');if(ge)ge.textContent=G.hero.gold;
+  grid.innerHTML=SHOP_ITEMS.map(item=>`<div class="shop-item" onclick="buyShopItem(${JSON.stringify(item).replace(/"/g,'&quot;')})"><div class="si-icon">${item.icon}</div><div class="si-name">${item.name}</div><div class="si-price">💰 ${item.price}</div><div class="si-desc">${item.desc}</div></div>`).join('');
+}
+
+function availEnemies(){return BASE_ENEMIES.filter(e=>G.hero.level>=e.minLv);}
+
+function chooseClass(cls,icon,type){
+  G.hero.class=cls;G.hero.icon=icon;G.hero.classType=type;
+  if(type==='str'){G.hero.atk+=5;G.hero.def+=4;G.hero.hpMax+=30;G.hero.hp=G.hero.hpMax;}
+  if(type==='int'){G.hero.atk+=8;G.hero.crit+=5;G.hero.manaMax+=40;G.hero.mana=G.hero.manaMax;}
+  if(type==='agi'){G.hero.spd+=6;G.hero.crit+=8;G.hero.atk+=4;}
+  if(type==='pal'){G.hero.def+=6;G.hero.hpMax+=20;G.hero.hp=G.hero.hpMax;G.hero.spd+=2;}
+  document.getElementById('classModal').style.display='none';
+  save();updateProfile();rebuildEBtns();
+  toast('Classe '+cls+' escolhida!');
+}
+
+function gainXP(amt){
+  // Sir Blessing XP bonus
+  if(G.hero.hasSirBlessing)amt=Math.floor(amt*1.5);
+  G.hero.xp+=amt;
+  while(G.hero.xp>=G.hero.xpNext){
+    G.hero.xp-=G.hero.xpNext;G.hero.level++;
+    G.hero.xpNext=Math.floor(G.hero.xpNext*1.45+50);
+    const ct=G.hero.classType;
+    G.hero.hpMax=Math.floor(G.hero.hpMax*1.1)+(ct==='str'?15:ct==='pal'?12:8);
+    G.hero.hp=G.hero.hpMax;
+    G.hero.atk=Math.floor(G.hero.atk*1.08)+(ct==='int'?3:ct==='agi'?2:1);
+    G.hero.def=Math.floor(G.hero.def*1.08)+(ct==='str'||ct==='pal'?2:1);
+    G.hero.spd=Math.floor(G.hero.spd*1.05)+(ct==='agi'?2:1);
+    G.hero.crit=Math.min(G.hero.crit+(ct==='int'||ct==='agi'?1:0),60);
+    G.hero.manaMax=Math.floor(G.hero.manaMax*1.08)+(ct==='int'?6:3);
+    G.hero.mana=G.hero.manaMax;
+    G.progress.level=G.hero.level;
+    addLog(`✨ NÍVEL ${G.hero.level}! Atributos aumentados!`,'kill');
+    checkMissions();rebuildEBtns();save();
+  }
+}
+
+function applyDeathPenalty(){
+  G.hero.deaths=(G.hero.deaths||0)+1;
+  G.progress.deaths=(G.progress.deaths||0)+1;
+  const renLoss=Math.floor(G.hero.renown*(Math.random()*0.1+0.05));
+  G.hero.renown=Math.max(0,G.hero.renown-renLoss);
+  const slots=['weapon','helm','chest','boots','ring','amulet','gloves','gem'];
+  slots.forEach(slot=>{
+    if(G.equipment[slot]){
+      const key=`dur_${slot}`;
+      if(G.durability[key])G.durability[key]=Math.max(0,G.durability[key]-Math.floor((G.equipment[slot].maxDura||50)*0.05));
+      if(G.durability[key]<=0)destroyEquipment(slot);
     }
+  });
+  checkAchievements();
+  addLog(`💀 Você morreu! Perdeu ${renLoss} Renome e equipamentos sofreram desgaste!`,'sys');
+}
+
+function reduceDurability(slot){
+  if(!G.equipment[slot])return;
+  const key=`dur_${slot}`;
+  if(!G.durability[key])G.durability[key]=G.equipment[slot].maxDura||50;
+  G.durability[key]--;
+  if(G.durability[key]<=0)destroyEquipment(slot);
+  else updateDurabilityDisplay();
+}
+
+// Item quebrado é DELETADO (não vai pro inventário)
+function destroyEquipment(slot){
+  const item=G.equipment[slot];if(!item)return;
+  Object.entries(item.stats).forEach(([k,v])=>{
+    if(k==='atk')G.hero.atk-=v;else if(k==='def')G.hero.def-=v;
+    else if(k==='spd')G.hero.spd-=v;else if(k==='hp'){G.hero.hpMax-=v;G.hero.hp=Math.min(G.hero.hp,G.hero.hpMax);}
+    else if(k==='mana'){G.hero.manaMax-=v;G.hero.mana=Math.min(G.hero.mana,G.hero.manaMax);}
+    else if(k==='crit')G.hero.crit-=v;
+  });
+  G.equipment[slot]=null;delete G.durability[`dur_${slot}`];
+  const slotMap={helm:0,chest:1,weapon:2,boots:3,ring:4,amulet:5,gloves:6,gem:7};
+  const si=slotMap[slot];const el=document.getElementById('eq'+si);
+  if(el){el.textContent='—';el.className='ev';}
+  save();updateProfile();updateDurabilityDisplay();
+  toast(`💥 ${item.name} foi destruído pelo desgaste!`);
+}
+
+function unequipItem(slot){
+  const item=G.equipment[slot];if(!item)return;
+  Object.entries(item.stats).forEach(([k,v])=>{
+    if(k==='atk')G.hero.atk-=v;else if(k==='def')G.hero.def-=v;
+    else if(k==='spd')G.hero.spd-=v;else if(k==='hp'){G.hero.hpMax-=v;G.hero.hp=Math.min(G.hero.hp,G.hero.hpMax);}
+    else if(k==='mana'){G.hero.manaMax-=v;G.hero.mana=Math.min(G.hero.mana,G.hero.manaMax);}
+    else if(k==='crit')G.hero.crit-=v;
+  });
+  G.equipment[slot]=null;delete G.durability[`dur_${slot}`];
+  if(G.inventory.length<30)G.inventory.push(item);
+  save();updateProfile();renderInventory();renderForge();updateDurabilityDisplay();
+  toast(`🔧 ${item.name} desequipado.`);
+}
+
+function sellItem(idx){
+  const item=G.inventory[idx];if(!item)return;
+  const recipe=RECIPES.find(r=>r.name===item.name);
+  const value=recipe?Math.floor(recipe.value*0.5):50;
+  G.hero.gold+=value;G.inventory.splice(idx,1);
+  toast(`💰 Vendeu ${item.name} por ${value} Ouro!`);
+  save();renderInventory();updateProfile();
+}
+
+function deleteItem(idx){
+  if(confirm('Descartar este item permanentemente?')){G.inventory.splice(idx,1);toast('🗑 Item descartado!');renderInventory();save();}
+}
+
+function dropMats(enemy){
+  if(!enemy.drops||!enemy.drops.length)return;
+  const lv=G.hero.level;
+  const valid=enemy.drops.filter(d=>{const t=MATS[d]?MATS[d].tier:1;return lv>=(t-1)*7;});
+  if(!valid.length)return;
+  const rolls=Math.floor(Math.random()*2)+1+(Math.random()<0.3?1:0);
+  for(let i=0;i<rolls;i++){
+    const mat=valid[Math.floor(Math.random()*valid.length)];
+    if(!G.materials[mat])G.materials[mat]=0;
+    const qty=Math.floor(Math.random()*3)+1+Math.floor(lv/10);
+    G.materials[mat]+=qty;G.progress.drops+=qty;
+    addLog(`📦 ${MATS[mat].icon} ${MATS[mat].name} ×${qty}`,'xpg');
+  }
+}
+
+// ─── COMBAT LOG ─────────────────────────────────────────────────
+let combatLogs=[];
+function addLog(msg,cls){combatLogs.unshift({msg,cls});if(combatLogs.length>50)combatLogs.pop();renderCombatLog();}
+function renderCombatLog(){
+  const ld=document.getElementById('clog');if(!ld)return;
+  ld.innerHTML=combatLogs.map(l=>`<div class="ll ${l.cls||''}">${l.msg}</div>`).join('');
+  if(!combatLogs.length)ld.innerHTML='<div class="ll sys">⚔ Nenhum combate registrado.</div>';
+}
+function clearCombatLog(){combatLogs=[];renderCombatLog();toast('🗑 Log limpo!');}
+
+// ─── SKILLS ──────────────────────────────────────────────────────
+function useSkill(skill,skillIndex){
+  if(G.combat.skillCooldown&&G.combat.skillCooldown>Date.now()){addLog('⏳ Habilidade em recarga!','sys');return;}
+  if(G.hero.mana<skill.cost){addLog(`❌ Mana insuficiente!`,'sys');return;}
+  G.hero.mana-=skill.cost;
+  const result=skill.effect(G.hero,G.combat.enemy);
+  if(result.damage>0){G.combat.enemy.hp-=result.damage;addLog(result.text,'dmg');}
+  else addLog(result.text,'heal');
+  G.combat.skillCooldown=Date.now()+3000;
+  updateProfile();
+  if(G.combat.enemy.hp<=0)endCombat(true);else renderCombatUI();
+}
+function toggleSkillAuto(si){
+  if(!G.combat.skillAuto)G.combat.skillAuto=[];
+  G.combat.skillAuto[si]=!G.combat.skillAuto[si];
+  toast(`${G.combat.skillAuto[si]?'✅ Auto ON':'❌ Auto OFF'} habilidade ${si+1}`);save();
+}
+function toggleAutoPotion(){G.combat.autoPotion=!G.combat.autoPotion;toast(`${G.combat.autoPotion?'✅ Auto-Potion ON':'❌ Auto-Potion OFF'}`);save();renderPotionBar();}
+function checkAutoPotion(){
+  if(!G.combat.autoPotion)return;
+  if(G.hero.hp<=G.hero.hpMax*0.3){if(G.potions.potion>0)usePotion('potion');else if(G.potions.elixir>0)usePotion('elixir');}
+  if(G.hero.mana<=G.hero.manaMax*0.2&&G.potions.mana_potion>0)usePotion('mana_potion');
+}
+
+// ─── COMBAT ──────────────────────────────────────────────────────
+function startCombat(bname,isBoss=false,isWeekly=false){
+  if(G.combat.active)return;
+  if(!G.hero.class){toast('Escolha sua classe primeiro!');return;}
+  if(G.dungeon.active){toast('🗺 Você está na masmorra! Espere terminar.');return;}
+  if(G.hero.hp<=0){applyDeathPenalty();G.hero.hp=Math.floor(G.hero.hpMax*0.5);addLog('💀 HP restaurado em 50%.','sys');}
+  let base;
+  if(isWeekly)base=WEEKLY_BOSS;else if(isBoss)base=DAILY_BOSS;else base=BASE_ENEMIES.find(e=>e.name===bname);
+  if(!base)return;
+  const enemy=scaledE(base,true);enemy.baseName=base.name;
+  enemy.btype=isWeekly?'weekly':isBoss?'boss':base.type;
+  G.combat.enemy=enemy;G.combat.active=true;G.combat.buffTurns=0;G.combat.buffAtk=0;G.combat.buffDef=0;G.combat.buffDodge=0;
+  renderCombatUI();
+  setBadge(isWeekly?'⚔ SEMANAL':isBoss?'⚔ DIÁRIO':'⚔ Combatendo',isWeekly?'var(--pur)':isBoss?'var(--gold)':'var(--red)','rgba(200,60,60,.5)');
+  addLog(`─── ${G.hero.name} vs ${enemy.name} ───`,'sys');
+  clearInterval(G.combat.tid);
+  const spd=Math.max(500,1400-G.hero.spd*25);
+  G.combat.tid=setInterval(()=>combatTick(isBoss,isWeekly),spd);
+}
+
+function combatTick(isBoss,isWeekly){
+  if(!G.combat.active||!G.combat.enemy)return;
+  const h=G.hero,e=G.combat.enemy;
+  checkAutoPotion();
+  if(G.combat.skillAuto&&G.combat.skillAuto.some(v=>v)&&h.mana>=15&&(!G.combat.skillCooldown||G.combat.skillCooldown<=Date.now())){
+    const skills=SKILLS_BY_CLASS[h.classType];
+    if(skills){for(let i=0;i<skills.length;i++){if(G.combat.skillAuto[i]&&h.mana>=skills[i].cost){useSkill(skills[i],i);break;}}}
+  }
+  if(h.buffTurns>0){h.buffTurns--;if(h.buffTurns<=0){h.buffAtk=0;h.buffDef=0;h.buffDodge=0;addLog('✨ Buffs expiraram.','sys');}}
+  const ca=h.atk*(1+(h.buffAtk||0));const cd=h.def+(h.buffDef||0);
+  const isCrit=Math.random()*100<h.crit;
+  let dE=Math.max(1,ca-e.def+rng(-2,5));
+  // Sir Blessing damage bonus
+  if(G.hero.hasSirBlessing)dE=Math.floor(dE*1.15);
+  if(isCrit)dE=Math.floor(dE*1.9);
+  let dH=Math.max(1,e.atk-cd+rng(-2,4));
+  if(Math.random()<(h.buffDodge||0)){addLog('💨 Esquivou!','heal');dH=0;}
+  if(h.classType==='pal'&&Math.random()<0.25){const reg=Math.floor(h.hpMax*0.04);h.hp=Math.min(h.hpMax,h.hp+reg);addLog(`✨ Reg: +${reg} HP`,'heal');}
+  e.hp-=dE;h.hp-=dH;h.hp=Math.max(0,h.hp);
+  addLog(`${h.icon}→${e.icon} ${dE}${isCrit?' 💥CRÍTICO!':''}`,'dmg');
+  if(dH>0)addLog(`${e.icon}→${h.icon} ${dH}`,'dmg');
+  renderCombatUI();
+  if(e.hp<=0)endCombat(true,isBoss,isWeekly);else if(h.hp<=0)endCombat(false);else updateProfile();
+}
+
+function endCombat(won,isBoss=false,isWeekly=false){
+  clearInterval(G.combat.tid);G.combat.active=false;
+  const e=G.combat.enemy;
+  if(won){
+    G.streak++;G.hero.kills++;G.progress.kills++;
+    if(e.btype==='dragon')G.progress.dragonKill++;
+    if(e.btype==='low')G.progress.lowKills++;
+    if(e.btype==='mid')G.progress.midKills++;
+    if(e.btype==='high')G.progress.highKills++;
+    if(G.streak>G.progress.streak)G.progress.streak=G.streak;
+    gainXP(e.xp);G.hero.renown+=e.ren;G.hero.gold+=e.gold;
+    if(G.hero.gold>G.progress.goldOnce)G.progress.goldOnce=G.hero.gold;
+    addLog(`☠ ${e.name} derrotado! +${e.xp} XP | +${e.ren} Ren | +${e.gold} 💰`,'kill');
+    dropMats(e);
+    const slots=['weapon','helm','chest','boots','ring','amulet','gloves','gem'];
+    slots.forEach(slot=>{if(G.equipment[slot])reduceDurability(slot);});
+    if(isBoss)G.dailyBossKilled=true;if(isWeekly)G.weeklyBossKilled=true;
+    checkMissions();checkAchievements();
+    setBadge('✓ Vitória','var(--grn)','rgba(60,180,80,.5)');
+    pushRanking();
+    // Auto combat — funciona com qualquer inimigo EXCETO boss/semanal
+    if(G.combat.auto&&!isBoss&&!isWeekly){
+      const last=e.baseName;
+      const nextBase=BASE_ENEMIES.find(en=>en.name===last);
+      if(nextBase&&G.hero.level>=nextBase.minLv)setTimeout(()=>{if(!G.combat.active)startCombat(last);},1000);
+      else{const ne=availEnemies()[0];if(ne)setTimeout(()=>{if(!G.combat.active)startCombat(ne.name);},1000);}
+    }
+  } else {
+    G.streak=0;applyDeathPenalty();addLog('💀 Derrotado.','sys');
+    setBadge('✗ Derrota','var(--red)','rgba(200,60,60,.5)');
+  }
+  G.combat.enemy=null;save();updateProfile();renderInventory();
+}
+
+function flee(){
+  if(!G.combat.active)return;
+  clearInterval(G.combat.tid);G.combat.active=false;G.combat.enemy=null;G.streak=0;
+  addLog('🏃 Você fugiu!','sys');setBadge('Aguardando','var(--muted)','var(--border)');updateProfile();
+}
+
+function toggleAuto(){
+  G.combat.auto=!G.combat.auto;
+  const b=document.getElementById('autobtn');
+  if(b){b.textContent='⚡ Auto: '+(G.combat.auto?'ON':'OFF');b.style.background=G.combat.auto?'rgba(201,168,76,.25)':'rgba(201,168,76,.12)';}
+}
+
+function setBadge(t,c,b){const el=document.getElementById('cstat');if(el){el.textContent=t;el.style.color=c;el.style.borderColor=b;}}
+
+function rebuildEBtns(){
+  const c=document.getElementById('enemy-btns');if(!c)return;
+  c.innerHTML='';
+  availEnemies().forEach(e=>{
+    const btn=document.createElement('button');btn.className='abtn';btn.textContent=e.icon+' '+e.name;
+    btn.onclick=()=>startCombat(e.name);c.appendChild(btn);
+  });
+  const dBtn=document.createElement('button');dBtn.className='abtn pri';dBtn.textContent='👑 Chefe Diário';
+  dBtn.onclick=()=>{if(G.dailyBossKilled)toast('❌ Chefe Diário já derrotado!');else startCombat(null,true,false);};c.appendChild(dBtn);
+  const wBtn=document.createElement('button');wBtn.className='abtn';wBtn.textContent='💀 Chefe Semanal';
+  wBtn.onclick=()=>{if(G.weeklyBossKilled)toast('❌ Chefe Semanal já derrotado!');else startCombat(null,false,true);};c.appendChild(wBtn);
+}
+
+// ─── MISSIONS ────────────────────────────────────────────────────
+function checkMissions(){
+  const p=G.progress;
+  const chk=(list,type)=>{
+    list.forEach(m=>{
+      if(!G.missions[type][m.id])G.missions[type][m.id]={done:false,claimed:false};
+      let cur=m.type==='level'?G.hero.level:(p[m.type]||0);
+      if(!G.missions[type][m.id].done&&cur>=m.target){G.missions[type][m.id].done=true;toast(`📜 ${m.name} concluída!`);}
+    });
+  };
+  chk(TUTORIAL_MISSIONS,'tutorial');
+  if(G.dailyMissions)chk(G.dailyMissions,'daily');
+  if(G.weeklyMissions)chk(G.weeklyMissions,'weekly');
+  renderMissions();
+}
+
+function claimMission(id,type){
+  let m;
+  if(type==='tutorial')m=TUTORIAL_MISSIONS.find(x=>x.id===id);
+  else if(type==='daily')m=G.dailyMissions.find(x=>x.id===id);
+  else m=G.weeklyMissions.find(x=>x.id===id);
+  if(!m||!G.missions[type][id]?.done||G.missions[type][id]?.claimed)return;
+  G.missions[type][id].claimed=true;
+  if(m.renR)G.hero.renown+=m.renR;if(m.goldR)G.hero.gold+=m.goldR;if(m.xpR)gainXP(m.xpR);
+  toast(`🏆 +${m.renR||0} Ren | +${m.xpR||0} XP | +${m.goldR||0} 💰`);
+  save();renderMissions();updateProfile();pushRanking();
+}
+
+function renderMissions(){
+  checkReset();const p=G.progress;
+  const row=(m,type)=>{
+    const st=G.missions[type][m.id]||{done:false,claimed:false};
+    let cur=m.type==='level'?G.hero.level:(p[m.type]||0);
+    const prog=Math.min(cur,m.target),pct=Math.round((prog/m.target)*100);
+    return`<div class="mi"><div class="micon">${m.icon}</div>
+      <div class="minfo"><h4>${m.name}</h4><p>${m.desc}</p>
+      <div class="mrew">🏆 +${m.renR||0} Ren | +${m.xpR||0} XP | +${m.goldR||0} 💰</div>
+      <div class="mprog">${prog}/${m.target} (${pct}%)</div>
+      <div class="bw" style="height:4px;margin-top:5px;margin-bottom:0"><div class="bf" style="background:#5080c0;width:${pct}%"></div></div></div>
+      <button class="mclaim ${st.claimed?'done':st.done?'rdy':'wip'}" onclick="${!st.claimed&&st.done?`claimMission('${m.id}','${type}')`:''}">
+        ${st.claimed?'✓ Coletado':st.done?'Coletar':'Em curso'}</button></div>`;
+  };
+  // Tutorial missions: só mostra as NÃO concluídas/reclamadas
+  const tutDiv=document.getElementById('tutorial-list');
+  if(tutDiv){
+    const pendingTut=TUTORIAL_MISSIONS.filter(m=>{const st=G.missions.tutorial[m.id];return!st||!st.claimed;});
+    tutDiv.innerHTML=pendingTut.length?pendingTut.map(m=>row(m,'tutorial')).join(''):'<div style="color:var(--grn);font-size:11px;padding:10px;text-align:center">✅ Tutorial concluído!</div>';
+  }
+  const dDiv=document.getElementById('mlist');
+  if(dDiv&&G.dailyMissions.length)dDiv.innerHTML=G.dailyMissions.map(m=>row(m,'daily')).join('');
+  const wDiv=document.getElementById('weeklyBoss');
+  if(wDiv){
+    wDiv.innerHTML=`<div class="mi"><div class="micon">💀</div>
+      <div class="minfo"><h4>Avatar da Destruição (Semanal)</h4><p>Derrote o chefe semanal uma vez</p>
+      <div class="mrew">🏆 +1500 Ren | +5000 XP | +1500 💰</div></div>
+      <button class="mclaim ${G.weeklyBossKilled?'done':'rdy'}" onclick="${!G.weeklyBossKilled?'startCombat(null,false,true)':''}">
+        ${G.weeklyBossKilled?'✓ Derrotado':'⚔ Enfrentar'}</button></div>`;
+  }
+  const diff=msToMidnight(),h2=Math.floor(diff/3600000),mn=Math.floor((diff%3600000)/60000);
+  const te=document.getElementById('reset-timer');if(te)te.textContent='Reset em '+h2+'h'+mn+'m';
+}
+
+// ─── DUNGEON OFFLINE ─────────────────────────────────────────────
+const DUNGEON_DURATIONS=[
+  {hours:2, label:'2 horas', xpMult:2, goldMult:2, rarityPool:['common','uncommon']},
+  {hours:4, label:'4 horas', xpMult:5, goldMult:5, rarityPool:['common','uncommon','rare']},
+  {hours:6, label:'6 horas', xpMult:12, goldMult:12, rarityPool:['uncommon','rare','epic']},
+  {hours:8, label:'8 horas', xpMult:25, goldMult:25, rarityPool:['rare','epic']},
+  {hours:12, label:'12 horas', xpMult:60, goldMult:60, rarityPool:['epic','legendary','cursed']},
+];
+
+let dungeonSelectedDur=2;
+
+function renderDungeon(){
+  const el=document.getElementById('dungeonContent');if(!el)return;
+  if(G.dungeon.active){
+    const now=Date.now(),end=G.dungeon.endTime,rem=Math.max(0,end-now);
+    const h=Math.floor(rem/3600000),m=Math.floor((rem%3600000)/60000),s=Math.floor((rem%60000)/1000);
+    const dur=DUNGEON_DURATIONS.find(d=>d.hours===G.dungeon.duration)||DUNGEON_DURATIONS[0];
+    el.innerHTML=`<div class="dungeon-active" style="background:var(--card2);border-radius:6px;padding:12px;text-align:center">
+      <div style="font-size:12px;color:var(--pur);font-family:Cinzel,serif;margin-bottom:8px">🗺 HERÓI NA MASMORRA</div>
+      <div class="dungeon-timer">${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}</div>
+      <div style="font-size:10px;color:var(--muted)">Duração total: ${dur.label} | XP ×${dur.xpMult} | Ouro ×${dur.goldMult}</div>
+      ${rem<=0?`<button class="abtn pri" style="width:100%;margin-top:12px" onclick="claimDungeon()">🎁 Coletar Recompensas!</button>`:'<div style="font-size:10px;color:var(--red);margin-top:8px">⚠ Você não pode sair antes do tempo terminar.</div>'}
+    </div>`;
+    if(rem<=0)clearInterval(dungeonTimer);
+  } else {
+    el.innerHTML=`<div>
+      <div style="font-size:11px;color:var(--gold);font-family:Cinzel,serif;margin-bottom:8px">Escolha a duração:</div>
+      <div class="duration-select">${DUNGEON_DURATIONS.map(d=>`<div class="dur-btn ${dungeonSelectedDur===d.hours?'sel':''}" onclick="selectDungeonDur(${d.hours})">${d.label}</div>`).join('')}</div>
+      <div class="dungeon-reward-preview" id="dungeonPreview"></div>
+      <button class="abtn pri" style="width:100%" onclick="startDungeon()">🗺 Entrar na Masmorra</button>
+    </div>`;
+    updateDungeonPreview();
+  }
+}
+
+function updateDungeonPreview(){
+  const el=document.getElementById('dungeonPreview');if(!el)return;
+  const dur=DUNGEON_DURATIONS.find(d=>d.hours===dungeonSelectedDur)||DUNGEON_DURATIONS[0];
+  const baseXP=G.hero.level*50;const baseGold=G.hero.level*20;
+  el.innerHTML=`<strong style="color:var(--txt)">Prévia de recompensas:</strong><br>
+    ✨ XP: ~${(baseXP*dur.xpMult).toLocaleString('pt-BR')}<br>
+    💰 Ouro: ~${(baseGold*dur.goldMult).toLocaleString('pt-BR')}<br>
+    📦 Materiais: abundantes<br>
+    ⚔ Raridade de itens: <span style="color:${rarityColor(dur.rarityPool[dur.rarityPool.length-1])}">${dur.rarityPool.map(r=>rarityName(r)).join(', ')}</span>`;
+}
+
+function selectDungeonDur(h){dungeonSelectedDur=h;renderDungeon();}
+
+let dungeonTimer=null;
+function startDungeon(){
+  if(G.dungeon.active){toast('Já está na masmorra!');return;}
+  if(G.combat.active){toast('Termine o combate antes!');return;}
+  const dur=DUNGEON_DURATIONS.find(d=>d.hours===dungeonSelectedDur)||DUNGEON_DURATIONS[0];
+  G.dungeon.active=true;G.dungeon.startTime=Date.now();G.dungeon.duration=dur.hours;
+  G.dungeon.endTime=Date.now()+dur.hours*3600000;
+  save();renderDungeon();
+  dungeonTimer=setInterval(renderDungeon,1000);
+  toast(`🗺 Entrou na masmorra por ${dur.label}! Boa sorte!`);
+}
+
+function claimDungeon(){
+  if(!G.dungeon.active||Date.now()<G.dungeon.endTime)return;
+  const dur=DUNGEON_DURATIONS.find(d=>d.hours===G.dungeon.duration)||DUNGEON_DURATIONS[0];
+  const baseXP=G.hero.level*50;const baseGold=G.hero.level*20;
+  const xpGain=Math.floor(baseXP*dur.xpMult*(0.8+Math.random()*0.4));
+  const goldGain=Math.floor(baseGold*dur.goldMult*(0.8+Math.random()*0.4));
+  gainXP(xpGain);G.hero.gold+=goldGain;
+  // Materiais
+  const matKeys=Object.keys(MATS);
+  for(let i=0;i<dur.hours*2;i++){const k=matKeys[Math.floor(Math.random()*matKeys.length)];G.materials[k]=(G.materials[k]||0)+rng(1,4);}
+  // Item aleatório por raridade
+  if(Math.random()<0.4&&G.inventory.length<30){
+    const rarPool=dur.rarityPool;const rar=rarPool[Math.floor(Math.random()*rarPool.length)];
+    const opts=RECIPES.filter(r=>r.rarity===rar&&G.hero.level>=r.minLv);
+    if(opts.length){
+      const recipe=opts[Math.floor(Math.random()*opts.length)];
+      const stats=applyForgeBonus(recipe.baseStats);
+      G.inventory.push({name:recipe.name,icon:recipe.icon,slot:recipe.slot,rarity:rar,stats,desc:recipe.desc+' [Masmorra]',maxDura:recipe.maxDura});
+      toast(`🎁 Item encontrado: ${recipe.name} (${rarityName(rar)})!`);
+    }
+  }
+  G.dungeon={active:false,startTime:null,endTime:null,duration:null};
+  clearInterval(dungeonTimer);
+  toast(`🎁 Masmorra concluída! +${xpGain} XP | +${goldGain} 💰`);
+  save();updateProfile();renderInventory();renderDungeon();
+}
+
+// Checar dungeon ao carregar
+function checkDungeonOnLoad(){
+  if(G.dungeon.active){
+    if(Date.now()>=G.dungeon.endTime){
+      // Pode coletar
+    }
+    dungeonTimer=setInterval(renderDungeon,1000);
+  }
+}
+
+// ─── ACHIEVEMENTS ────────────────────────────────────────────────
+function checkAchievements(){
+  const p=G.progress;const h=G.hero;
+  let newUnlock=false;
+  ACHIEVEMENTS.forEach(a=>{
+    if(G.achievements[a.id])return;
+    let val=0;
+    if(a.stat==='kills')val=h.kills;
+    else if(a.stat==='deaths')val=h.deaths||0;
+    else if(a.stat==='prestige')val=h.prestige;
+    else if(a.stat==='forge')val=p.forge||0;
+    else if(a.stat==='midKills')val=p.midKills||0;
+    else if(a.stat==='dragonKill')val=p.dragonKill||0;
+    else if(a.stat==='goldOnce')val=p.goldOnce||0;
+    if(val>=a.target){
+      G.achievements[a.id]=true;
+      // Unlock title
+      const titDef=TITLE_DEFS.find(t=>t.achId===a.id);
+      if(titDef&&!G.titles.includes(titDef.id))G.titles.push(titDef.id);
+      toast(`🏆 Conquista: ${a.name}! Título desbloqueado!`);
+      newUnlock=true;
+    }
+  });
+  if(newUnlock){save();renderTitleList();}
+}
+
+function renderAchievements(){
+  const grid=document.getElementById('ach-grid');if(!grid)return;
+  const h=G.hero,p=G.progress;
+  grid.innerHTML=ACHIEVEMENTS.map(a=>{
+    const unlocked=!!G.achievements[a.id];
+    let val=0;
+    if(a.stat==='kills')val=h.kills;else if(a.stat==='deaths')val=h.deaths||0;
+    else if(a.stat==='prestige')val=h.prestige;else if(a.stat==='forge')val=p.forge||0;
+    else if(a.stat==='midKills')val=p.midKills||0;else if(a.stat==='dragonKill')val=p.dragonKill||0;
+    else if(a.stat==='goldOnce')val=p.goldOnce||0;
+    const pct=Math.min(100,Math.floor((val/a.target)*100));
+    return`<div class="ach-card ${unlocked?'unlocked':''} ${unlocked?'':'ach-locked'}">
+      ${unlocked?'<div class="ach-unlock-tag">✓ Desbloqueado</div>':''}
+      <div class="ach-icon">${a.icon}</div>
+      <div class="ach-name">${a.name}</div>
+      <div class="ach-desc">${a.desc}</div>
+      <div class="ach-prog">${val.toLocaleString('pt-BR')}/${a.target.toLocaleString('pt-BR')} (${pct}%)</div>
+      <div class="bw" style="height:3px;margin-top:4px;margin-bottom:0"><div class="bf" style="background:var(--gold);width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ─── TÍTULOS ─────────────────────────────────────────────────────
+function renderTitleList(){
+  const el=document.getElementById('titleList');if(!el)return;
+  if(!TITLE_DEFS.length){el.innerHTML='<div style="color:var(--muted);font-size:11px;padding:8px">Complete conquistas para desbloquear títulos!</div>';return;}
+  el.innerHTML=TITLE_DEFS.map(t=>{
+    const earned=G.titles.includes(t.id);
+    const isEquipped=G.hero.equippedTitle===t.id;
+    return`<div class="title-row ${earned?'earned':''}">
+      <div class="title-icon">${t.icon}</div>
+      <div class="title-info"><div class="title-name">${t.name}</div><div class="title-cond">${t.cond}</div></div>
+      ${earned?`<button class="title-equip-btn ${isEquipped?'active':''}" onclick="equipTitle('${t.id}')">${isEquipped?'✓ Equipado':'Equipar'}</button>`:'<span style="font-size:9px;color:var(--dim)">🔒</span>'}
+    </div>`;
+  }).join('');
+}
+
+function equipTitle(id){
+  if(!G.titles.includes(id))return;
+  G.hero.equippedTitle=G.hero.equippedTitle===id?'':id;
+  save();renderTitleList();updateProfile();
+  const t=TITLE_DEFS.find(x=>x.id===id);
+  toast(G.hero.equippedTitle===id?`🎖 Título equipado: ${t?.name}`:'Título removido.');
+}
+
+// ─── INVASION ────────────────────────────────────────────────────
+function getInvasionCountdown(){
+  const now=new Date();
+  const invTime=new Date(now);
+  invTime.setHours(21,0,0,0);
+  if(now>=invTime)invTime.setDate(invTime.getDate()+1);
+  const diff=invTime-now;
+  const h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
+  return{diff,str:`${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`};
+}
+
+function renderInvasion(){
+  const cd=document.getElementById('invasionCountdown');
+  const cont=document.getElementById('invasionContent');
+  if(!cd||!cont)return;
+  const {diff,str}=getInvasionCountdown();
+  const today=brasiliaDate();
+  const alreadyReg=G.invasion.registered&&G.invasion.lastDate===today;
+  cd.textContent=`Próxima invasão em: ${str}`;
+  cont.innerHTML=`
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">
+      <div>👥 Máximo: 10 aventureiros | Sem mínimo para iniciar</div>
+      <div>⏰ Horário fixo: todo dia às 21:00</div>
+      <div style="margin-top:5px;color:var(--txt)">Recompensas: XP massivo, Ouro, Materiais raros e Itens épicos!</div>
+    </div>
+    ${alreadyReg
+      ?'<div class="invasion-registered">✅ Você está inscrito na invasão de hoje! Apareça às 21:00.</div>'
+      :`<button class="abtn" style="background:rgba(200,60,60,.15);border-color:rgba(200,60,60,.4);color:var(--red);width:100%" onclick="registerInvasion()">⚔ Inscrever-se na Invasão</button>`
+    }
+    <div style="font-size:10px;color:var(--dim);margin-top:8px;text-align:center">Sistema de invasão em desenvolvimento — batalha global com outros jogadores em breve!</div>
+  `;
+}
+
+function registerInvasion(){
+  const today=brasiliaDate();
+  G.invasion.registered=true;G.invasion.lastDate=today;
+  save();renderInvasion();
+  toast('⚔ Inscrito na invasão das 21:00!');
+}
+
+// ─── RANKING ─────────────────────────────────────────────────────
+let currentRankTab='prestige';
+function setRankTab(tab,btn){
+  currentRankTab=tab;
+  document.querySelectorAll('.rank-tab').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  loadRanking();
+}
+
+async function loadRanking(){
+  const rlist=document.getElementById('rlist');if(!rlist)return;
+  rlist.innerHTML='<div style="color:var(--muted);font-size:12px;padding:20px;text-align:center">Carregando ranking...</div>';
+  // Try Firebase first
+  if(firebaseInitialized&&G.userId){
+    try{
+      const db=firebase.firestore();
+      const snap=await db.collection('ranking').orderBy(currentRankTab==='deaths'?'deaths':'prestige','desc').limit(50).get();
+      const list=[];
+      snap.forEach(doc=>list.push(doc.data()));
+      // Also sort by renown for prestige tab
+      if(currentRankTab==='prestige')list.sort((a,b)=>(b.prestige||0)-(a.prestige||0)||(b.renown||0)-(a.renown||0));
+      else list.sort((a,b)=>(b.deaths||0)-(a.deaths||0));
+      renderRankList(list);
+      // Check Sir Blessing
+      checkSirBlessing(list);
+      return;
+    }catch(e){console.log('Ranking Firebase error',e);}
+  }
+  // Fallback: localStorage
+  const players=[];
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i);
+    if(key&&key.startsWith('roi_player_')){try{players.push(JSON.parse(localStorage.getItem(key)));}catch(e){}}
+  }
+  if(G.hero.class&&!players.find(p=>p.name===G.hero.name)){
+    players.push({name:G.hero.name,class:G.hero.class,icon:G.hero.icon,renown:G.hero.renown,level:G.hero.level,kills:G.hero.kills,prestige:G.hero.prestige,deaths:G.hero.deaths||0});
+  }
+  if(currentRankTab==='deaths')players.sort((a,b)=>(b.deaths||0)-(a.deaths||0));
+  else players.sort((a,b)=>(b.prestige||0)-(a.prestige||0)||(b.renown||0)-(a.renown||0));
+  renderRankList(players.slice(0,50));
+  checkSirBlessing(players);
+}
+
+function checkSirBlessing(list){
+  // Top 5 by prestige get Sir blessing
+  const top5=list.slice(0,5);
+  const wasBlessed=G.hero.hasSirBlessing;
+  const amInTop5=top5.findIndex(p=>p.userId===G.userId||p.name===G.hero.name)<5&&top5.some(p=>p.userId===G.userId||p.name===G.hero.name);
+  G.hero.hasSirBlessing=amInTop5;
+  if(amInTop5!==wasBlessed){
+    if(amInTop5)toast('⚜ Você está no Top 5! A Bênção de Sir foi concedida! +50% XP e +15% Dano!');
+    else toast('📉 Você saiu do Top 5. A Bênção de Sir foi removida.');
+    save();updateProfile();
+  }
+}
+
+function renderRankList(list){
+  const medals=['','🥇','🥈','🥉'];const rl=document.getElementById('rlist');if(!rl)return;
+  if(!list.length){rl.innerHTML='<div style="color:var(--muted);font-size:12px;padding:20px;text-align:center">Nenhum aventureiro ainda.</div>';return;}
+  rl.innerHTML=list.map((p,i)=>{
+    const pos=i+1,pc=pos<=3?'p'+pos:'pn',medal=pos<=3?medals[pos]:pos;
+    const isMe=p.userId===G.userId||(p.name===G.hero.name);
+    const isSir=pos<=5;
+    const titDef=p.equippedTitle?TITLE_DEFS.find(t=>t.id===p.equippedTitle):null;
+    const scoreVal=currentRankTab==='deaths'?(p.deaths||0).toLocaleString('pt-BR'):(p.renown||0).toLocaleString('pt-BR');
+    const scoreLbl=currentRankTab==='deaths'?'MORTES':'RENOME';
+    return`<div class="ri ${isMe?'me':''} ${isSir?'sir-rank':''}">
+      <div class="rp ${pc}">${medal}</div>
+      <div class="rav">${p.icon||'⚔'}</div>
+      <div class="rinfo">
+        <div class="rname">
+          ${isSir?'<span style="color:var(--rg);font-size:9px">⚜ Sir </span>':''}
+          <span class="${isMe?'':''}">  ${p.name||'?'}${isMe?' (Você)':''}</span>
+          ${titDef?`<span class="title-badge">${titDef.name}</span>`:''}
+        </div>
+        <div class="rcls">${p.class||'—'} · Lv${p.level||1} · Prest.${p.prestige||0} · ${p.kills||0} abates · ${p.deaths||0} mortes</div>
+      </div>
+      <div class="rscore"><div class="rsv">${scoreVal}</div><div class="rsl">${scoreLbl}</div></div>
+    </div>`;
+  }).join('');
+  const myPos=list.findIndex(p=>p.userId===G.userId||(p.name===G.hero.name))+1;
+  const rankEl=document.getElementById('prankpos');if(rankEl)rankEl.textContent=myPos>0?'#'+myPos:'—';
+}
+
+// ─── COMBAT UI ───────────────────────────────────────────────────
+function renderCombatUI(){
+  const h=G.hero,e=G.combat.enemy;if(!e)return;
+  const eIc=document.getElementById('cEnemyIc');if(eIc)eIc.textContent=e.icon;
+  const eNm=document.getElementById('cEnemyNm');if(eNm)eNm.textContent=e.name+' (Lv'+G.hero.level+')';
+  const eHp=document.getElementById('cEnemyHp');if(eHp)eHp.textContent=Math.max(0,e.hp)+'/'+e.hpMax;
+  const eBar=document.getElementById('cEnemyBar');if(eBar)eBar.style.width=Math.max(0,(e.hp/e.hpMax)*100)+'%';
+  const hHp=document.getElementById('cHeroHp');if(hHp)hHp.textContent=h.hp+'/'+h.hpMax;
+  const hBar=document.getElementById('cHeroBar');if(hBar)hBar.style.width=Math.max(0,(h.hp/h.hpMax)*100)+'%';
+  const hMn=document.getElementById('cHeroMana');if(hMn)hMn.textContent=h.mana+'/'+h.manaMax;
+  const hMnB=document.getElementById('cHeroManaBar');if(hMnB)hMnB.style.width=Math.max(0,(h.mana/h.manaMax)*100)+'%';
+  renderSkills();renderPotionBar();
+}
+
+function renderPotionBar(){
+  const bar=document.getElementById('potionBar');if(!bar)return;
+  bar.innerHTML=`<button class="potion-btn" onclick="usePotion('potion')">🧪 Cura (${G.potions.potion||0})</button>
+    <button class="potion-btn" onclick="usePotion('mana_potion')">💙 Mana (${G.potions.mana_potion||0})</button>
+    <button class="potion-btn" onclick="usePotion('elixir')">✨ Elixir (${G.potions.elixir||0})</button>
+    <button class="potion-btn ${G.combat.autoPotion?'pri':''}" onclick="toggleAutoPotion()">🔄 Auto ${G.combat.autoPotion?'ON':'OFF'}</button>`;
+}
+
+function renderSkills(){
+  const bar=document.getElementById('skillbar');if(!bar||!G.hero.classType)return;
+  const skills=SKILLS_BY_CLASS[G.hero.classType];if(!skills)return;
+  const onCd=G.combat.skillCooldown&&G.combat.skillCooldown>Date.now();
+  bar.innerHTML=skills.map((s,i)=>{
+    const canUse=G.hero.mana>=s.cost&&!onCd&&G.combat.active;
+    const dmgText=s.dmgMult>0?`~${Math.floor(G.hero.atk*s.dmgMult)} dmg`:'buff';
+    return`<div style="flex:1">
+      <button class="skill-btn ${canUse?'':'disabled'}" onclick="${canUse?`useSkill(SKILLS_BY_CLASS['${G.hero.classType}'][${i}],${i})`:''}">
+        ${s.name}<br>
+        <span style="font-size:7px">💙${s.cost} mana | ${dmgText} | ${s.desc}</span>
+      </button>
+      <div class="skill-auto" onclick="toggleSkillAuto(${i})" style="cursor:pointer;text-align:center;font-size:8px">
+        ${G.combat.skillAuto&&G.combat.skillAuto[i]?'🔁 Auto ON':'⚡ Auto OFF'}
+      </div></div>`;
+  }).join('');
+}
+
+// ─── INVENTORY ───────────────────────────────────────────────────
+function renderInventory(){
+  const grid=document.getElementById('inv-grid'),SLOTS=30;if(!grid)return;
+  grid.innerHTML='';
+  const ce=document.getElementById('inv-count');if(ce)ce.textContent=G.inventory.length+'/'+SLOTS;
+  for(let i=0;i<SLOTS;i++){
+    const item=G.inventory[i],d=document.createElement('div');
+    if(item){
+      d.className='isl';
+      const rc=rarityClass(item.rarity);
+      d.innerHTML=`<div class="ii">${item.icon}</div><div class="in ${rc}">${item.name}</div><div class="iq ${rc}">${rarityName(item.rarity)}</div>
+        <div class="item-actions"><span class="item-action" onclick="event.stopPropagation();equipItem(${i})">⚔</span>
+        <span class="item-action" onclick="event.stopPropagation();sellItem(${i})">💰</span>
+        <span class="item-action" onclick="event.stopPropagation();deleteItem(${i})">🗑</span></div>`;
+      d.style.borderColor=rarityColor(item.rarity)+'44';
+      d.title=`${item.name}\n${rarityName(item.rarity)}\n${item.desc}`;
+    } else {d.className='isl empty';d.innerHTML='<div style="font-size:12px;color:var(--dim)">·</div>';}
+    grid.appendChild(d);
+  }
+  // Materiais
+  const ml=document.getElementById('mat-list');if(!ml)return;ml.innerHTML='';
+  const hasMat=Object.keys(MATS).some(k=>(G.materials[k]||0)>0);
+  if(!hasMat)ml.innerHTML='<div style="color:var(--muted);font-size:11px;padding:6px">Nenhum material ainda.</div>';
+  else Object.keys(MATS).forEach(k=>{const q=G.materials[k]||0;if(!q)return;const m=MATS[k];ml.innerHTML+=`<div style="background:var(--card2);border:1px solid var(--border);border-radius:5px;padding:7px 10px;display:flex;align-items:center;gap:6px"><span style="font-size:16px">${m.icon}</span><div><div style="font-size:10px;color:var(--txt)">${m.name}</div><div style="font-size:11px;color:var(--gold);font-weight:700">${q}</div></div></div>`;});
+  // Poções
+  const pd=document.getElementById('potion-list');
+  if(pd)pd.innerHTML=`<div style="background:var(--card2);border:1px solid var(--border);border-radius:5px;padding:7px 10px;display:flex;align-items:center;gap:6px"><span>🧪</span><div>Poção de Cura: ${G.potions.potion||0}</div></div>
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:5px;padding:7px 10px;display:flex;align-items:center;gap:6px"><span>💙</span><div>Poção de Mana: ${G.potions.mana_potion||0}</div></div>
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:5px;padding:7px 10px;display:flex;align-items:center;gap:6px"><span>✨</span><div>Elixir: ${G.potions.elixir||0}</div></div>`;
+}
+
+function equipItem(idx){
+  const item=G.inventory[idx];if(!item)return;
+  const slot=item.slot;
+  const slotMap={helm:0,chest:1,weapon:2,boots:3,ring:4,amulet:5,gloves:6,gem:7};
+  const si=slotMap[slot];
+  if(G.equipment[slot]){
+    const old=G.equipment[slot];
+    Object.entries(old.stats).forEach(([k,v])=>{
+      if(k==='atk')G.hero.atk-=v;else if(k==='def')G.hero.def-=v;
+      else if(k==='spd')G.hero.spd-=v;else if(k==='hp'){G.hero.hpMax-=v;G.hero.hp=Math.min(G.hero.hp,G.hero.hpMax);}
+      else if(k==='mana'){G.hero.manaMax-=v;G.hero.mana=Math.min(G.hero.mana,G.hero.manaMax);}
+      else if(k==='crit')G.hero.crit-=v;
+    });
+    G.inventory.push(old);
+  }
+  G.equipment[slot]=item;
+  if(!G.durability[`dur_${slot}`])G.durability[`dur_${slot}`]=item.maxDura||50;
+  Object.entries(item.stats).forEach(([k,v])=>{
+    if(k==='atk')G.hero.atk+=v;else if(k==='def')G.hero.def+=v;
+    else if(k==='spd')G.hero.spd+=v;else if(k==='hp'){G.hero.hpMax+=v;G.hero.hp=Math.min(G.hero.hp+v,G.hero.hpMax);}
+    else if(k==='mana'){G.hero.manaMax+=v;G.hero.mana=Math.min(G.hero.mana+v,G.hero.manaMax);}
+    else if(k==='crit')G.hero.crit+=v;
+  });
+  G.inventory.splice(idx,1);
+  const rc=rarityClass(item.rarity);
+  const el=document.getElementById('eq'+si);
+  if(el){el.textContent=item.name;el.className='ev '+rc;}
+  save();updateProfile();renderInventory();renderForge();updateDurabilityDisplay();
+  toast('Equipado: '+item.name);
+}
+
+function updateDurabilityDisplay(){
+  const slots=['helm','chest','weapon','boots','ring','amulet','gloves','gem'];
+  slots.forEach((slot,i)=>{
+    const de=document.getElementById(`dur${i}`);if(!de)return;
+    const key=`dur_${slot}`;const dur=G.durability[key];const item=G.equipment[slot];
+    if(item&&dur!==undefined&&dur>0){const pct=Math.floor((dur/(item.maxDura||50))*100);de.textContent=`🔧 ${pct}%`;de.style.color=pct<20?'var(--red)':'var(--dur)';}
+    else if(item)de.textContent=`🔧 ${item.maxDura||50}%`;
+    else de.textContent='';
   });
 }
 
-async function initGoogleLogin() {
-  const loadingDiv = document.getElementById('loginLoading');
-  const loginBtn = document.getElementById('googleLoginBtn');
-  if (loadingDiv) loadingDiv.style.display = 'block';
-  if (loginBtn) loginBtn.disabled = true;
-  
-  await waitForFirebase();
-  
-  if (!auth) {
-    toast('❌ Erro ao carregar Firebase. Tente recarregar a página.');
-    if (loadingDiv) loadingDiv.style.display = 'none';
-    if (loginBtn) loginBtn.disabled = false;
+// ─── FORGE ───────────────────────────────────────────────────────
+function canForge(r){
+  if(G.hero.level<r.minLv)return false;
+  if(r.goldCost&&G.hero.gold<r.goldCost)return false;
+  for(const[m,q]of Object.entries(r.reqs)){if((G.materials[m]||0)<q)return false;}
+  return true;
+}
+
+function forgeItem(i){
+  const r=RECIPES[i];if(!canForge(r)){toast('Materiais ou ouro insuficientes!');return;}
+  if(G.inventory.length>=30){toast('Inventário cheio!');return;}
+  Object.entries(r.reqs).forEach(([m,q])=>{G.materials[m]-=q;});
+  if(r.goldCost)G.hero.gold-=r.goldCost;
+  const bs=applyForgeBonus(r.baseStats);
+  // Apply rarity multiplier
+  const rm=RARITIES[r.rarity]?.mult||1;
+  const boostedStats={};Object.entries(bs).forEach(([k,v])=>{boostedStats[k]=Math.floor(v*rm);});
+  G.inventory.push({name:r.name,icon:r.icon,slot:r.slot,rarity:r.rarity,stats:boostedStats,desc:`${r.desc} [Forja Lv${G.forgeLevel}+${getForgeBonus()}%]`,maxDura:r.maxDura});
+  addForgeXp(r.forgeXp);G.progress.forge=(G.progress.forge||0)+1;
+  checkAchievements();save();renderInventory();renderForge();updateProfile();
+  toast(`⚒ Forjado: ${r.name} (${rarityName(r.rarity)})!`);
+}
+
+function renderForge(){
+  const fl=document.getElementById('forge-list');if(!fl)return;fl.innerHTML='';
+  RECIPES.forEach((r,i)=>{
+    const can=canForge(r),locked=G.hero.level<r.minLv;
+    const reqStr=Object.entries(r.reqs).map(([m,q])=>{
+      const have=G.materials[m]||0,ok=have>=q;
+      return`<span style="color:${ok?'var(--grn)':'var(--red)'}">${MATS[m].icon} ${MATS[m].name} ${have}/${q}</span>`;
+    }).join(' · ');
+    const goldOk=!r.goldCost||G.hero.gold>=r.goldCost;
+    const rc=rarityClass(r.rarity);
+    fl.innerHTML+=`<div class="fi-card" style="${locked?'opacity:.45':''}">
+      <div class="fi-icon">${r.icon}</div>
+      <div class="fi-info">
+        <div class="fi-name ${rc}">${r.name} <span style="font-size:9px;color:var(--muted)">(Lv${r.minLv}) [${rarityName(r.rarity)}]</span></div>
+        <div class="fi-req">${reqStr} ${r.goldCost?`· <span style="color:${goldOk?'var(--grn)':'var(--red)'}">💰${G.hero.gold}/${r.goldCost}</span>`:''}
+        </div>
+        <div class="fi-stats">${r.desc} | Forja+${getForgeBonus()}% | Dura: ${r.maxDura}</div>
+      </div>
+      <button class="forge-btn ${can?'can':'no'}" onclick="${can?`forgeItem(${i})`:''}">
+        ${locked?'🔒 Lv'+r.minLv:can?'⚒ Forjar':'Falta mat.'}</button>
+    </div>`;
+  });
+}
+
+// ─── CHAT ────────────────────────────────────────────────────────
+const CHAT_FILTER=['racista','racismo','preto','macaco','negro','fdp','vtnc','viado','gay','traveco','puto','puta','merda','corno','caralho','porra','cu','buceta','piroca','rola'];
+function filterChat(msg){
+  let m=msg.trim();
+  CHAT_FILTER.forEach(w=>{const re=new RegExp(w,'gi');m=m.replace(re,'***');});
+  return m;
+}
+
+function sendChatMessage(){
+  if(!firebaseInitialized||!G.userId){toast('❌ Faça login para usar o chat!');return;}
+  const input=document.getElementById('chatInput');if(!input)return;
+  const raw=input.value.trim();if(!raw)return;
+  const filtered=filterChat(raw);
+  input.value='';
+  try{
+    const db=firebase.firestore();
+    db.collection('chat').add({
+      name:G.hero.name,icon:G.hero.icon,msg:filtered,
+      userId:G.userId,ts:firebase.firestore.FieldValue.serverTimestamp(),
+      prestige:G.hero.prestige,equippedTitle:G.hero.equippedTitle||''
+    });
+  }catch(e){toast('❌ Erro ao enviar mensagem.');}
+}
+
+function loadChat(){
+  if(!firebaseInitialized)return;
+  try{
+    const db=firebase.firestore();
+    db.collection('chat').orderBy('ts','desc').limit(50).onSnapshot(snap=>{
+      const msgs=[];snap.forEach(doc=>msgs.push(doc.data()));msgs.reverse();
+      const el=document.getElementById('chatMessages');if(!el)return;
+      if(!msgs.length){el.innerHTML='<div style="color:var(--muted);font-size:11px;text-align:center;padding:20px">Sem mensagens ainda. Seja o primeiro!</div>';return;}
+      el.innerHTML=msgs.map(m=>{
+        const ts=m.ts?.toDate?m.ts.toDate():new Date();
+        const time=ts.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+        const isSir=m.prestige>=1; // simplificado; rankear via firebase seria mais complexo
+        return`<div class="chat-msg"><span class="cm-name ${isSir?'sir-name':''}">${m.icon||'⚔'} ${m.name}</span><span class="cm-time">${time}</span><br><span class="cm-text">${m.msg}</span></div>`;
+      }).join('');
+      el.scrollTop=el.scrollHeight;
+    });
+  }catch(e){console.log('Chat load error',e);}
+}
+
+// Enter key for chat
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement?.id==='chatInput')sendChatMessage();});
+
+// ─── PROFILE ─────────────────────────────────────────────────────
+function updateProfile(){
+  const h=G.hero;
+  const avEl=document.getElementById('av');if(avEl)avEl.textContent=h.icon||'⚔';
+  const avLv=document.getElementById('av-lv');if(avLv)avLv.textContent=h.level;
+  const pname=document.getElementById('pname');if(pname)pname.textContent=h.name;
+  const pcls=document.getElementById('pcls');if(pcls)pcls.textContent=h.class||'— Sem classe';
+  const pgold=document.getElementById('pgold');if(pgold)pgold.textContent=h.gold.toLocaleString('pt-BR');
+  const pren=document.getElementById('pren');if(pren)pren.textContent=h.renown.toLocaleString('pt-BR');
+  const ppr=document.getElementById('pprestige');if(ppr)ppr.textContent=h.prestige;
+  const pkills=document.getElementById('pkills');if(pkills)pkills.textContent=h.kills;
+  const pdeaths=document.getElementById('pdeaths');if(pdeaths)pdeaths.textContent=h.deaths||0;
+  const hpl=document.getElementById('hpl');if(hpl)hpl.textContent=h.hp+'/'+h.hpMax;
+  const hpb=document.getElementById('hpb');if(hpb)hpb.style.width=Math.max(0,(h.hp/h.hpMax)*100)+'%';
+  const xpl=document.getElementById('xpl');if(xpl)xpl.textContent=h.xp+'/'+h.xpNext;
+  const xpb=document.getElementById('xpb');if(xpb)xpb.style.width=Math.min(100,(h.xp/h.xpNext)*100)+'%';
+  const satk=document.getElementById('satk');if(satk)satk.textContent=Math.floor(h.atk);
+  const sdef=document.getElementById('sdef');if(sdef)sdef.textContent=Math.floor(h.def);
+  const sspd=document.getElementById('sspd');if(sspd)sspd.textContent=Math.floor(h.spd);
+  const shp=document.getElementById('shp');if(shp)shp.textContent=h.hpMax;
+  const smn=document.getElementById('smn');if(smn)smn.textContent=h.manaMax;
+  const scr=document.getElementById('scr');if(scr)scr.textContent=h.crit+'%';
+  const cHeroIc=document.getElementById('cHeroIc');if(cHeroIc)cHeroIc.textContent=h.icon||'⚔';
+  const cHeroNm=document.getElementById('cHeroNm');if(cHeroNm)cHeroNm.textContent=h.name;
+  if(!G.combat.active||!G.combat.enemy){
+    const cHH=document.getElementById('cHeroHp');if(cHH)cHH.textContent=h.hp+'/'+h.hpMax;
+    const cHB=document.getElementById('cHeroBar');if(cHB)cHB.style.width=Math.max(0,(h.hp/h.hpMax)*100)+'%';
+    const cHM=document.getElementById('cHeroMana');if(cHM)cHM.textContent=h.mana+'/'+h.manaMax;
+    const cHMB=document.getElementById('cHeroManaBar');if(cHMB)cHMB.style.width=Math.max(0,(h.mana/h.manaMax)*100)+'%';
+  }
+  // Sir badge
+  const sirB=document.getElementById('sirBadge');if(sirB)sirB.style.display=h.hasSirBlessing?'inline-block':'none';
+  // Title badge
+  const titB=document.getElementById('titleBadge');
+  if(titB&&h.equippedTitle){const t=TITLE_DEFS.find(x=>x.id===h.equippedTitle);if(t){titB.textContent=t.icon+' '+t.name;titB.style.display='inline-block';}else titB.style.display='none';}
+  else if(titB)titB.style.display='none';
+  // Blessing badge
+  const bb=document.getElementById('blessingBadge');if(bb)bb.style.display=h.hasSirBlessing?'block':'none';
+  // Prestige btn
+  const pb=document.getElementById('prestigeBtn');
+  if(pb)pb.style.opacity=(h.level>=50&&h.renown>=5000)?'1':'0.5';
+  const pi=document.getElementById('prestigeInfo');
+  if(pi)pi.textContent=`Bônus atual: +${((h.prestigeBonus-1)*100).toFixed(0)}% em XP e atributos`;
+}
+
+// ─── NAME CHANGE ─────────────────────────────────────────────────
+function openNameChange(){
+  const now=Date.now();
+  const threeMonths=90*24*3600*1000;
+  // First change free; subsequent changes require 3 months
+  if(G.nameChangeCount>0&&G.nameLastChanged&&(now-G.nameLastChanged)<threeMonths){
+    const rem=threeMonths-(now-G.nameLastChanged);
+    const days=Math.ceil(rem/86400000);
+    toast(`❌ Próxima troca de nome disponível em ${days} dias.`);return;
+  }
+  const info=document.getElementById('nameChangeInfo');
+  if(info){info.textContent=G.nameChangeCount===0?'Primeira alteração gratuita!':'Você pode mudar seu nome agora. Próxima troca: em 3 meses.';}
+  document.getElementById('nameModal').classList.add('show');
+  const inp=document.getElementById('nameInput');if(inp){inp.value=G.hero.name;inp.focus();}
+}
+function cancelName(){document.getElementById('nameModal').classList.remove('show');}
+function confirmName(){
+  const n=document.getElementById('nameInput')?.value.trim();
+  if(!n||n.length<2){toast('Nome inválido (mínimo 2 caracteres)!');return;}
+  const oldName=G.hero.name;
+  G.hero.name=n.substring(0,16);
+  G.nameChangeCount=(G.nameChangeCount||0)+1;
+  G.nameLastChanged=Date.now();
+  document.getElementById('nameModal').classList.remove('show');
+  if(oldName!==G.hero.name){const ok='roi_player_'+oldName.toLowerCase().replace(/[^a-z0-9]/g,'_');localStorage.removeItem(ok);}
+  save();updateProfile();pushRanking();toast('Nome alterado: '+G.hero.name);
+}
+
+// ─── FIRST NAME ──────────────────────────────────────────────────
+function showFirstNameModal(){
+  document.getElementById('nameFirstModal').style.display='flex';
+  document.getElementById('nameFirstInput').focus();
+}
+function confirmFirstName(){
+  const n=document.getElementById('nameFirstInput')?.value.trim();
+  if(!n||n.length<2){toast('Nome inválido!');return;}
+  G.hero.name=n.substring(0,16);
+  G.nameChangeCount=0;
+  document.getElementById('nameFirstModal').style.display='none';
+  save();updateProfile();
+  // Show class modal
+  document.getElementById('classModal').style.display='flex';
+}
+
+// ─── DELETE ACCOUNT ──────────────────────────────────────────────
+async function deleteAccount(){
+  if(!confirm('⚠ TEM CERTEZA? Todos os seus dados serão apagados permanentemente e você voltará do zero!'))return;
+  if(!confirm('Esta ação é IRREVERSÍVEL. Confirme novamente para apagar sua conta.'))return;
+  // Limpa Firebase
+  if(firebaseInitialized&&G.userId){
+    try{
+      const db=firebase.firestore();
+      await db.collection('players').doc(G.userId).delete();
+      const rkKey=G.hero.name.toLowerCase().replace(/[^a-z0-9]/g,'_');
+      await db.collection('ranking').doc(rkKey).delete();
+    }catch(e){console.log(e);}
+  }
+  // Limpa localStorage
+  const key='roi_player_'+G.hero.name.toLowerCase().replace(/[^a-z0-9]/g,'_');
+  localStorage.removeItem(key);localStorage.removeItem(SK);
+  toast('🗑 Conta apagada. Saindo...');
+  setTimeout(()=>location.reload(),2000);
+}
+
+// ─── LOGOUT ──────────────────────────────────────────────────────
+async function doLogout(){
+  if(!confirm('Deseja sair da conta Google?'))return;
+  if(firebaseInitialized){
+    try{await firebase.auth().signOut();}catch(e){}
+  }
+  // Show login overlay again
+  document.getElementById('loginOverlay').style.display='flex';
+  document.getElementById('logoutBtn').style.display='none';
+  document.getElementById('topUserInfo').textContent='';
+  document.getElementById('accountActions').style.display='none';
+  G.userId=null;G.userEmail=null;save();
+  toast('👋 Deslogado com sucesso!');
+}
+
+// ─── RANKING PUSH ────────────────────────────────────────────────
+function pushRanking(){
+  if(!G.hero.class||!G.hero.name)return;
+  const key='roi_player_'+G.hero.name.toLowerCase().replace(/[^a-z0-9]/g,'_');
+  const entry={name:G.hero.name,class:G.hero.class,icon:G.hero.icon,renown:G.hero.renown,level:G.hero.level,kills:G.hero.kills,prestige:G.hero.prestige,deaths:G.hero.deaths||0,equippedTitle:G.hero.equippedTitle||'',ts:Date.now()};
+  try{localStorage.setItem(key,JSON.stringify(entry));syncToFirebase();}catch(e){}
+}
+
+// ─── FIREBASE ────────────────────────────────────────────────────
+let firebaseInitialized=false;
+
+function initFirebase(){
+  if(typeof firebase==='undefined'||!firebase.apps){return false;}
+  if(firebaseInitialized)return true;
+  try{
+    const cfg={apiKey:"AIzaSyBtBNptJ9TxFlGArwHX9iwDQVv-9GGL9Us",authDomain:"realm-of-iron.firebaseapp.com",projectId:"realm-of-iron",storageBucket:"realm-of-iron.firebasestorage.app",messagingSenderId:"571041801417",appId:"1:571041801417:web:2e0023a1fac20553331918",measurementId:"G-D5V665M0EQ"};
+    if(firebase.apps.length===0)firebase.initializeApp(cfg);
+    firebaseInitialized=true;
+    // Auth state listener — SEM redirecionamento automático para login
+    firebase.auth().onAuthStateChanged(user=>{
+      if(user){
+        G.userId=user.uid;G.userEmail=user.email;
+        document.getElementById('loginOverlay').style.display='none';
+        document.getElementById('logoutBtn').style.display='inline-block';
+        document.getElementById('topUserInfo').textContent=user.displayName||user.email;
+        document.getElementById('accountActions').style.display='flex';
+        loadUserDataFromFirebase(user.uid);
+        loadChat();
+      } else {
+        // Não logado — mostra overlay
+        document.getElementById('loginOverlay').style.display='flex';
+        document.getElementById('logoutBtn').style.display='none';
+        document.getElementById('accountActions').style.display='none';
+      }
+    });
+    return true;
+  }catch(e){console.error('Firebase init error:',e);return false;}
+}
+
+async function initGoogleLogin(){
+  if(!initFirebase()){
+    // Tenta inicializar e depois logar
+    setTimeout(async()=>{
+      if(initFirebase())await doGoogleSignIn();
+      else toast('⚠️ Erro ao carregar Firebase. Recarregue a página.');
+    },1000);
     return;
   }
-  
-  try {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    const result = await auth.signInWithPopup(provider);
-    const user = result.user;
-    G.userId = user.uid;
-    G.userEmail = user.email;
-    document.getElementById('userEmailDisplay').innerText = user.email || user.displayName;
-    await loadUserData();
-    document.getElementById('loginOverlay').style.display = 'none';
-    document.getElementById('gameContainer').style.display = 'flex';
-    if (!G.hero.name) showNameModal();
-    else if (!G.hero.class) showClassModal();
-    else { updateProfile(); rebuildEnemyButtons(); renderInventory(); }
-    toast(`✅ Bem-vindo, ${user.displayName || user.email}!`);
-    updateOnlineCount();
-  } catch(e) {
-    console.error('Erro login:', e);
-    toast('❌ Erro no login: ' + (e.message || 'Tente novamente'));
-  } finally {
-    if (loadingDiv) loadingDiv.style.display = 'none';
-    if (loginBtn) loginBtn.disabled = false;
+  await doGoogleSignIn();
+}
+
+async function doGoogleSignIn(){
+  try{
+    const provider=new firebase.auth.GoogleAuthProvider();
+    await firebase.auth().signInWithPopup(provider);
+    // onAuthStateChanged cuida do resto
+  }catch(e){
+    console.error('Login error:',e);
+    toast('❌ Erro no login: '+(e.message||'Tente novamente'));
   }
 }
 
-async function logoutGoogle() {
-  if (auth) await auth.signOut();
-  G = { hero: { name: '', class: '', icon: '', classType: '', level: 1, xp: 0, xpNext: 100, hp: 100, hpMax: 100, mana: 50, manaMax: 50, atk: 10, def: 6, spd: 8, crit: 5, renown: 0, gold: 100, kills: 0, deaths: 0, prestige: 0, prestigeBonus: 1.0 }, combat: { active: false, auto: false, enemy: null, tid: null }, inventory: [], materials: {}, potions: { potion: 0, mana_potion: 0, elixir: 0 }, equipment: { helm: null, chest: null, weapon: null, boots: null, ring: null, amulet: null, gloves: null, gem: null }, durability: {}, userId: null, userEmail: null };
-  document.getElementById('loginOverlay').style.display = 'flex';
-  document.getElementById('gameContainer').style.display = 'none';
-  toast('👋 Logout realizado');
+async function syncToFirebase(){
+  if(!firebaseInitialized||!G.userId)return;
+  if(typeof firebase==='undefined'||!firebase.firestore)return;
+  try{
+    const db=firebase.firestore();
+    await db.collection('players').doc(G.userId).set({
+      name:G.hero.name,class:G.hero.class,icon:G.hero.icon,renown:G.hero.renown,
+      level:G.hero.level,kills:G.hero.kills,prestige:G.hero.prestige,gold:G.hero.gold,
+      deaths:G.hero.deaths||0,equippedTitle:G.hero.equippedTitle||'',
+      lastUpdate:firebase.firestore.FieldValue.serverTimestamp(),
+      gameData:JSON.stringify(G)
+    },{merge:true});
+    const rkKey=G.hero.name.toLowerCase().replace(/[^a-z0-9]/g,'_');
+    await db.collection('ranking').doc(rkKey).set({
+      name:G.hero.name,class:G.hero.class,icon:G.hero.icon,renown:G.hero.renown,
+      level:G.hero.level,kills:G.hero.kills,prestige:G.hero.prestige,deaths:G.hero.deaths||0,
+      userId:G.userId,equippedTitle:G.hero.equippedTitle||'',
+      lastUpdate:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // Count registered users
+    const countSnap=await db.collection('players').get();
+    const onlEl=document.getElementById('onl');
+    if(onlEl)onlEl.textContent=(countSnap.size||1)+' aventureiros cadastrados';
+  }catch(e){console.error('Sync Firebase:',e);}
 }
 
-async function loadUserData() {
-  if (!db || !G.userId) return;
-  try {
-    const doc = await db.collection('players').doc(G.userId).get();
-    if (doc.exists) {
-      const data = doc.data();
-      if (data.gameData) {
-        const loaded = JSON.parse(data.gameData);
-        Object.assign(G, loaded);
-        G.combat = { active: false, auto: false, enemy: null, tid: null };
+async function loadUserDataFromFirebase(uid){
+  if(!firebaseInitialized)return;
+  try{
+    const db=firebase.firestore();
+    const doc=await db.collection('players').doc(uid).get();
+    if(doc.exists){
+      const data=doc.data();
+      if(data.gameData){
+        const loaded=JSON.parse(data.gameData);
+        Object.assign(G,loaded);
+        G.combat={active:false,auto:false,enemy:null,tid:null,buffTurns:0,buffAtk:0,buffDef:0,buffDodge:0,skillAuto:G.combat?.skillAuto||[],autoPotion:G.combat?.autoPotion||false};
+        G.userId=uid;G.userEmail=data.userEmail;
+        save();
+        // Se já tem nome e classe, mostra jogo
+        if(G.hero.name&&G.hero.class){
+          updateAll();
+          toast('✅ Dados carregados!');
+        } else if(!G.hero.name){
+          showFirstNameModal();
+        } else if(!G.hero.class){
+          document.getElementById('classModal').style.display='flex';
+        }
+      } else {
+        // Novo usuário no Firebase mas sem dados
+        showFirstNameModal();
       }
+    } else {
+      // Usuário novo
+      showFirstNameModal();
     }
-  } catch(e) { console.error('Load error:', e); }
-  saveToLocal();
+  }catch(e){console.error('Load Firebase:',e);showFirstNameModal();}
 }
 
-async function saveToCloud() {
-  if (!db || !G.userId) return;
-  try {
-    await db.collection('players').doc(G.userId).set({ gameData: JSON.stringify(G), userEmail: G.userEmail, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-  } catch(e) { console.error('Save error:', e); }
-}
-
-function saveToLocal() { localStorage.setItem(STORAGE_KEY, JSON.stringify(G)); saveToCloud(); }
-
-function showNameModal() { document.getElementById('nameModal').classList.add('show'); }
-function cancelName() { document.getElementById('nameModal').classList.remove('show'); }
-
-function confirmNameAndProceed() {
-  const name = document.getElementById('nameInput')?.value.trim();
-  if (!name) { toast('Nome inválido!'); return; }
-  G.hero.name = name.substring(0, 16);
-  document.getElementById('nameModal').classList.remove('show');
-  saveToLocal();
-  showClassModal();
-}
-
-function showClassModal() { document.getElementById('classModal').style.display = 'flex'; }
-
-function chooseClass(cls, icon, type) {
-  G.hero.class = cls; G.hero.icon = icon; G.hero.classType = type;
-  if (type === 'str') { G.hero.atk += 5; G.hero.def += 4; G.hero.hpMax += 30; }
-  if (type === 'int') { G.hero.atk += 8; G.hero.crit += 5; G.hero.manaMax += 40; }
-  if (type === 'agi') { G.hero.spd += 6; G.hero.crit += 8; G.hero.atk += 4; }
-  if (type === 'pal') { G.hero.def += 6; G.hero.hpMax += 20; G.hero.spd += 2; }
-  G.hero.hp = G.hero.hpMax;
-  G.hero.mana = G.hero.manaMax;
-  document.getElementById('classModal').style.display = 'none';
-  saveToLocal();
-  updateProfile();
-  rebuildEnemyButtons();
-  toast(`Classe ${cls} escolhida! Boa sorte!`);
-}
-
-function updateProfile() {
-  const h = G.hero;
-  document.getElementById('av').textContent = h.icon || '⚔';
-  document.getElementById('av-lv').textContent = h.level;
-  document.getElementById('pname').textContent = h.name || '—';
-  document.getElementById('pcls').textContent = h.class || 'Sem classe';
-  document.getElementById('pgold').textContent = h.gold;
-  document.getElementById('pren').textContent = h.renown;
-  document.getElementById('pprestige').textContent = h.prestige;
-  document.getElementById('pkills').textContent = h.kills;
-  document.getElementById('pdeaths').textContent = h.deaths;
-  document.getElementById('hpl').textContent = `${h.hp}/${h.hpMax}`;
-  document.getElementById('hpb').style.width = `${(h.hp/h.hpMax)*100}%`;
-  document.getElementById('xpl').textContent = `${h.xp}/${h.xpNext}`;
-  document.getElementById('xpb').style.width = `${(h.xp/h.xpNext)*100}%`;
-  document.getElementById('satk').textContent = Math.floor(h.atk);
-  document.getElementById('sdef').textContent = Math.floor(h.def);
-  document.getElementById('sspd').textContent = Math.floor(h.spd);
-  document.getElementById('shp').textContent = h.hpMax;
-  document.getElementById('smn').textContent = h.manaMax;
-  document.getElementById('scr').textContent = h.crit + '%';
-  document.getElementById('cHeroIc').textContent = h.icon || '⚔';
-  document.getElementById('cHeroNm').textContent = h.name;
-  if (!G.combat.active) {
-    document.getElementById('cHeroHp').textContent = `${h.hp}/${h.hpMax}`;
-    document.getElementById('cHeroBar').style.width = `${(h.hp/h.hpMax)*100}%`;
-    document.getElementById('cHeroMana').textContent = `${h.mana}/${h.manaMax}`;
-    document.getElementById('cHeroManaBar').style.width = `${(h.mana/h.manaMax)*100}%`;
-  }
-}
-
-function rebuildEnemyButtons() {
-  const container = document.getElementById('enemy-btns');
-  if (!container) return;
-  container.innerHTML = '';
-  const available = BASE_ENEMIES.filter(e => G.hero.level >= e.minLv);
-  available.forEach(e => {
-    const btn = document.createElement('button');
-    btn.className = 'abtn';
-    btn.textContent = `${e.icon} ${e.name}`;
-    btn.onclick = () => startCombat(e);
-    container.appendChild(btn);
+function updateAll(){
+  updateProfile();rebuildEBtns();renderInventory();renderForge();renderMissions();renderShop();
+  updateDurabilityDisplay();updateForgeUI();renderTitleList();renderAchievements();renderDungeon();renderInvasion();
+  // Restore equipment display
+  const slotMap={helm:0,chest:1,weapon:2,boots:3,ring:4,amulet:5,gloves:6,gem:7};
+  Object.entries(G.equipment).forEach(([slot,item])=>{
+    if(!item)return;const si=slotMap[slot];const el=document.getElementById('eq'+si);
+    if(el){el.textContent=item.name;el.className='ev '+rarityClass(item.rarity);}
   });
 }
 
-function scaledEnemy(base) {
-  const lv = G.hero.level;
-  const sc = 1 + (lv-1) * 0.15;
-  return { name: base.name, icon: base.icon, hp: Math.floor(base.hpM * 20 * sc), hpMax: Math.floor(base.hpM * 20 * sc), atk: Math.floor((base.atkMin + Math.random()*(base.atkMax-base.atkMin)) * sc), def: Math.floor(base.defM * 5 * sc), xp: Math.floor(base.xpM * 18 * sc), ren: Math.floor(base.renM * 4 * sc), gold: Math.floor(base.goldM * sc * (0.7+Math.random()*0.8)) };
+// ─── NAVIGATION ──────────────────────────────────────────────────
+function sw(tab,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
+  const panel=document.getElementById('tab-'+tab);if(panel)panel.classList.add('on');if(btn)btn.classList.add('on');
+  if(tab==='ranking')loadRanking();
+  if(tab==='missions'){checkReset();renderMissions();}
+  if(tab==='inventory')renderInventory();
+  if(tab==='forge'){renderForge();updateForgeUI();}
+  if(tab==='shop')renderShop();
+  if(tab==='combat')renderSkills();
+  if(tab==='achievements')renderAchievements();
+  if(tab==='dungeon')renderDungeon();
+  if(tab==='invasion')renderInvasion();
 }
 
-function startCombat(enemyBase) {
-  if (G.combat.active) return;
-  if (!G.hero.class) { toast('Escolha sua classe primeiro!'); return; }
-  G.combat.enemy = scaledEnemy(enemyBase);
-  G.combat.active = true;
-  if (G.combat.tid) clearInterval(G.combat.tid);
-  const speed = Math.max(500, 1400 - G.hero.spd * 25);
-  G.combat.tid = setInterval(combatTick, speed);
-  renderCombatUI();
-  addLog(`⚔ Combatendo ${G.combat.enemy.name}!`, 'sys');
+// ─── TOAST & UTILS ───────────────────────────────────────────────
+let toastT;
+function toast(msg){const t=document.getElementById('toast');if(!t)return;t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500);}
+function rng(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function msToMidnight(){const now=new Date(),t=new Date(now);t.setDate(now.getDate()+1);t.setHours(0,0,0,0);return t-now;}
+
+function waitForFirebaseAndInit(){
+  if(typeof firebase!=='undefined')initFirebase();
+  else setTimeout(waitForFirebaseAndInit,300);
 }
 
-function combatTick() {
-  if (!G.combat.active || !G.combat.enemy) return;
-  const h = G.hero, e = G.combat.enemy;
-  let dmgToEnemy = Math.max(1, h.atk - e.def + Math.floor(Math.random() * 5) - 2);
-  let dmgToHero = Math.max(1, e.atk - h.def + Math.floor(Math.random() * 5) - 2);
-  const isCrit = Math.random() * 100 < h.crit;
-  if (isCrit) dmgToEnemy = Math.floor(dmgToEnemy * 1.9);
-  e.hp -= dmgToEnemy;
-  h.hp -= dmgToHero;
-  h.hp = Math.max(0, h.hp);
-  addLog(`${h.icon}→${e.icon} ${dmgToEnemy}${isCrit ? '💥' : ''} | ${e.icon}→${h.icon} ${dmgToHero}`, 'dmg');
-  renderCombatUI();
-  if (e.hp <= 0) endCombat(true);
-  else if (h.hp <= 0) endCombat(false);
-}
+// ─── INIT ────────────────────────────────────────────────────────
+(function init(){
+  load();checkReset();
+  if(!G.dailyMissions.length)G.dailyMissions=generateDailyMissions();
+  if(!G.weeklyMissions.length)G.weeklyMissions=generateWeeklyMissions();
+  if(!G.titles)G.titles=[];
+  if(!G.achievements)G.achievements={};
+  if(!G.dungeon)G.dungeon={active:false,startTime:null,endTime:null,duration:null};
+  if(!G.invasion)G.invasion={registered:false,lastDate:''};
+  if(G.hero.deaths===undefined)G.hero.deaths=0;
 
-function endCombat(won) {
-  clearInterval(G.combat.tid);
-  const e = G.combat.enemy;
-  if (won) {
-    G.hero.kills++;
-    G.hero.xp += e.xp;
-    G.hero.renown += e.ren;
-    G.hero.gold += e.gold;
-    while (G.hero.xp >= G.hero.xpNext) {
-      G.hero.xp -= G.hero.xpNext;
-      G.hero.level++;
-      G.hero.xpNext = Math.floor(G.hero.xpNext * 1.45 + 50);
-      G.hero.hpMax = Math.floor(G.hero.hpMax * 1.1);
-      G.hero.hp = G.hero.hpMax;
-      G.hero.atk = Math.floor(G.hero.atk * 1.08);
-      G.hero.def = Math.floor(G.hero.def * 1.08);
-      G.hero.spd = Math.floor(G.hero.spd * 1.05);
-      G.hero.manaMax = Math.floor(G.hero.manaMax * 1.08);
-      G.hero.mana = G.hero.manaMax;
-      addLog(`✨ NÍVEL ${G.hero.level}!`, 'kill');
-      rebuildEnemyButtons();
-    }
-    addLog(`☠ ${e.name} derrotado! +${e.xp} XP | +${e.ren} Renome | +${e.gold} Ouro`, 'kill');
-    if (G.combat.auto) {
-      const next = BASE_ENEMIES.find(en => G.hero.level >= en.minLv);
-      if (next) setTimeout(() => startCombat(next), 1000);
-    }
-  } else {
-    G.hero.deaths++;
-    G.hero.hp = Math.floor(G.hero.hpMax * 0.5);
-    addLog(`💀 Você morreu contra ${e.name}!`, 'sys');
-  }
-  G.combat.active = false;
-  G.combat.enemy = null;
-  saveToLocal();
-  updateProfile();
-  renderInventory();
-}
+  // Firebase primeiro — ele cuida de mostrar/esconder o overlay
+  waitForFirebaseAndInit();
 
-function renderCombatUI() {
-  const h = G.hero, e = G.combat.enemy;
-  if (!e) return;
-  document.getElementById('cEnemyIc').textContent = e.icon;
-  document.getElementById('cEnemyNm').textContent = `${e.name} (Lv${G.hero.level})`;
-  document.getElementById('cEnemyHp').textContent = `${Math.max(0,e.hp)}/${e.hpMax}`;
-  document.getElementById('cEnemyBar').style.width = `${Math.max(0,(e.hp/e.hpMax)*100)}%`;
-  document.getElementById('cHeroHp').textContent = `${h.hp}/${h.hpMax}`;
-  document.getElementById('cHeroBar').style.width = `${(h.hp/h.hpMax)*100}%`;
-  document.getElementById('cHeroMana').textContent = `${h.mana}/${h.manaMax}`;
-  document.getElementById('cHeroManaBar').style.width = `${(h.mana/h.manaMax)*100}%`;
-}
-
-function flee() {
-  if (!G.combat.active) return;
-  clearInterval(G.combat.tid);
-  G.combat.active = false;
-  G.combat.enemy = null;
-  addLog('🏃 Você fugiu!', 'sys');
-}
-
-function toggleAuto() {
-  G.combat.auto = !G.combat.auto;
-  const btn = document.getElementById('autobtn');
-  if (btn) btn.textContent = `⚡ Auto: ${G.combat.auto ? 'ON' : 'OFF'}`;
-}
-
-let combatLogs = [];
-function addLog(msg, cls) {
-  combatLogs.unshift({ msg, cls });
-  if (combatLogs.length > 50) combatLogs.pop();
-  const logDiv = document.getElementById('clog');
-  if (logDiv) logDiv.innerHTML = combatLogs.map(l => `<div class="ll ${l.cls}">${l.msg}</div>`).join('');
-}
-
-function renderInventory() {
-  const grid = document.getElementById('inv-grid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  for (let i = 0; i < 30; i++) {
-    const item = G.inventory[i];
-    const div = document.createElement('div');
-    if (item) {
-      div.className = 'isl';
-      div.innerHTML = `<div class="ii">${item.icon}</div><div class="in">${item.name}</div>`;
-    } else {
-      div.className = 'isl empty';
-      div.innerHTML = '<div style="font-size:12px">·</div>';
-    }
-    grid.appendChild(div);
-  }
-}
-
-function doPrestige() {
-  if (G.hero.level >= 50 && G.hero.renown >= 5000) {
-    G.hero.prestige++;
-    G.hero.prestigeBonus = 1 + (G.hero.prestige * 0.05);
-    G.hero.level = 1;
-    G.hero.xp = 0;
-    G.hero.xpNext = 100;
-    G.hero.renown = 0;
-    G.hero.gold = Math.floor(G.hero.gold * 0.3);
-    G.hero.hpMax = Math.floor(100 * G.hero.prestigeBonus);
-    G.hero.hp = G.hero.hpMax;
-    G.hero.manaMax = Math.floor(50 * G.hero.prestigeBonus);
-    G.hero.mana = G.hero.manaMax;
-    G.hero.atk = Math.floor(10 * G.hero.prestigeBonus);
-    G.hero.def = Math.floor(6 * G.hero.prestigeBonus);
-    G.hero.spd = Math.floor(8 * G.hero.prestigeBonus);
-    toast(`🌀 REENCARNAÇÃO! Bônus +${(G.hero.prestigeBonus-1)*100}%`);
-    saveToLocal();
-    updateProfile();
-    rebuildEnemyButtons();
-  } else {
-    toast(`❌ Requer Nv50 e 5000 Renome (Nv${G.hero.level} | ${G.hero.renown} Renome)`);
-  }
-}
-
-function sw(tab, btn) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
-  document.querySelectorAll('.tb').forEach(b => b.classList.remove('on'));
-  const panel = document.getElementById('tab-' + tab);
-  if (panel) panel.classList.add('on');
-  if (btn) btn.classList.add('on');
-  if (tab === 'ranking') loadRanking();
-  if (tab === 'inventory') renderInventory();
-}
-
-function loadRanking() {
-  const rlist = document.getElementById('rlist');
-  if (!rlist) return;
-  rlist.innerHTML = '<div style="padding:20px;text-align:center">🏆 Carregando ranking...</div>';
-  setTimeout(() => {
-    rlist.innerHTML = '<div style="padding:20px;text-align:center">👑 Rank baseado no prestígio dos jogadores</div>';
-  }, 500);
-}
-
-function updateOnlineCount() {
-  const onlEl = document.getElementById('onl');
-  if (onlEl) onlEl.textContent = Math.floor(Math.random() * 80) + 60 + ' online';
-  setTimeout(updateOnlineCount, 30000);
-}
-
-let toastTimer;
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-// Inicialização
-(async function init() {
-  // Carregar dados locais primeiro
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    try {
-      const loaded = JSON.parse(saved);
-      Object.assign(G, loaded);
-      G.combat = { active: false, auto: false, enemy: null, tid: null };
-    } catch(e) {}
-  }
-  
-  // Inicializar Firebase e verificar sessão
-  await waitForFirebase();
-  
-  if (auth && auth.currentUser) {
-    G.userId = auth.currentUser.uid;
-    G.userEmail = auth.currentUser.email;
-    document.getElementById('userEmailDisplay').innerText = auth.currentUser.email || auth.currentUser.displayName;
-    await loadUserData();
-    document.getElementById('loginOverlay').style.display = 'none';
-    document.getElementById('gameContainer').style.display = 'flex';
-    if (!G.hero.name) showNameModal();
-    else if (!G.hero.class) showClassModal();
-    else { updateProfile(); rebuildEnemyButtons(); renderInventory(); }
-  }
-  
-  updateOnlineCount();
+  // Invasion countdown
+  setInterval(()=>{if(document.getElementById('tab-invasion')?.classList.contains('on'))renderInvasion();},1000);
+  // Dungeon check
+  checkDungeonOnLoad();
+  // Auto-save
+  setInterval(save,15000);
+  setInterval(()=>{checkReset();if(document.getElementById('tab-missions')?.classList.contains('on'))renderMissions();},60000);
 })();
 </script>
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
