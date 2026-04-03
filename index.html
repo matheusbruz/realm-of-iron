@@ -2712,5 +2712,759 @@ function waitForFirebaseAndInit(){
 })();
 </script>
 
+
+<script>
+(function(){
+  if(window.__roi_patch_v6_applied)return;
+  window.__roi_patch_v6_applied=true;
+
+  const SESSION_ID='sess_'+Math.random().toString(36).slice(2)+Date.now().toString(36);
+  const COMBAT_REGIONS=[
+    {id:'pastos',name:'Pastos de Ferro',icon:'🌾',minLevel:1,monsters:[
+      {name:'Rato do Celeiro',icon:'🐀',hpM:0.7,atkMin:3,atkMax:7,defM:0.2,xpM:0.7,renM:0.3,goldM:2,drops:['osso','pele'],minLv:1,type:'low'},
+      {name:'Javali Bravo',icon:'🐗',hpM:1.0,atkMin:5,atkMax:10,defM:0.3,xpM:1.0,renM:0.4,goldM:3,drops:['pele','osso'],minLv:3,type:'low'},
+      {name:'Lobo Cinzento',icon:'🐺',hpM:1.2,atkMin:7,atkMax:13,defM:0.4,xpM:1.2,renM:0.5,goldM:4,drops:['pele','madeira'],minLv:5,type:'low'},
+      {name:'Bandido Rural',icon:'🗡️',hpM:1.5,atkMin:9,atkMax:15,defM:0.5,xpM:1.4,renM:0.6,goldM:5,drops:['ferro','madeira'],minLv:7,type:'mid'},
+      {name:'Touro de Guerra',icon:'🐂',hpM:1.9,atkMin:12,atkMax:18,defM:0.7,xpM:1.7,renM:0.8,goldM:7,drops:['couro','ferro'],minLv:9,type:'mid'}
+    ]},
+    {id:'pantanos',name:'Pântanos Velados',icon:'🪷',minLevel:10,monsters:[
+      {name:'Sapo Tóxico',icon:'🐸',hpM:2.0,atkMin:12,atkMax:19,defM:0.8,xpM:1.8,renM:0.9,goldM:8,drops:['veneno','osso'],minLv:10,type:'mid'},
+      {name:'Sanguessuga Gigante',icon:'🪱',hpM:2.2,atkMin:14,atkMax:21,defM:0.8,xpM:2.0,renM:1.0,goldM:9,drops:['veneno','pele'],minLv:12,type:'mid'},
+      {name:'Bruxa do Brejo',icon:'🧙',hpM:2.5,atkMin:16,atkMax:25,defM:1.0,xpM:2.3,renM:1.2,goldM:11,drops:['cristal','runa'],minLv:14,type:'mid'},
+      {name:'Crocodiliano',icon:'🐊',hpM:2.9,atkMin:18,atkMax:28,defM:1.1,xpM:2.6,renM:1.4,goldM:13,drops:['couro','ferro'],minLv:16,type:'high'},
+      {name:'Espírito Lodoso',icon:'👻',hpM:3.2,atkMin:21,atkMax:31,defM:1.2,xpM:2.9,renM:1.6,goldM:14,drops:['runa','alma'],minLv:18,type:'high'}
+    ]},
+    {id:'ruinas',name:'Ruínas Antigas',icon:'🏛️',minLevel:20,monsters:[
+      {name:'Guardião Quebrado',icon:'🗿',hpM:3.4,atkMin:22,atkMax:33,defM:1.3,xpM:3.0,renM:1.8,goldM:15,drops:['pedra','ferro'],minLv:20,type:'high'},
+      {name:'Acólito Profano',icon:'🕯️',hpM:3.7,atkMin:24,atkMax:36,defM:1.4,xpM:3.3,renM:2.0,goldM:17,drops:['runa','veneno'],minLv:22,type:'high'},
+      {name:'Sentinela de Bronze',icon:'🤖',hpM:4.0,atkMin:27,atkMax:39,defM:1.6,xpM:3.6,renM:2.2,goldM:19,drops:['aco','cristal'],minLv:24,type:'high'},
+      {name:'Oráculo Cego',icon:'👁️',hpM:4.4,atkMin:29,atkMax:43,defM:1.7,xpM:4.0,renM:2.5,goldM:22,drops:['alma','cristal'],minLv:26,type:'high'},
+      {name:'Colosso Sepulcral',icon:'🪦',hpM:4.9,atkMin:32,atkMax:46,defM:1.9,xpM:4.4,renM:2.8,goldM:24,drops:['aco','alma'],minLv:28,type:'high'}
+    ]},
+    {id:'montanhas',name:'Montanhas Rubras',icon:'⛰️',minLevel:30,monsters:[
+      {name:'Harpia Rubra',icon:'🦅',hpM:5.2,atkMin:34,atkMax:49,defM:2.0,xpM:4.8,renM:3.0,goldM:26,drops:['pena','couro'],minLv:30,type:'high'},
+      {name:'Ogro de Pedra',icon:'👹',hpM:5.8,atkMin:37,atkMax:52,defM:2.2,xpM:5.2,renM:3.4,goldM:28,drops:['aco','pedra'],minLv:32,type:'high'},
+      {name:'Draconato Negro',icon:'🐲',hpM:6.2,atkMin:40,atkMax:57,defM:2.3,xpM:5.8,renM:3.8,goldM:32,drops:['dragao','aco'],minLv:34,type:'dragon'},
+      {name:'Xamã Vulcânico',icon:'🌋',hpM:6.8,atkMin:43,atkMax:60,defM:2.4,xpM:6.3,renM:4.1,goldM:35,drops:['mana_gem','runa'],minLv:36,type:'dragon'},
+      {name:'Grifo Imperial',icon:'🦁',hpM:7.3,atkMin:46,atkMax:64,defM:2.6,xpM:6.9,renM:4.4,goldM:38,drops:['dragao','couro'],minLv:38,type:'dragon'}
+    ]},
+    {id:'abismo',name:'Abismo da Coroa',icon:'🌑',minLevel:40,monsters:[
+      {name:'Ceifador Abissal',icon:'☠️',hpM:7.8,atkMin:49,atkMax:68,defM:2.8,xpM:7.5,renM:4.8,goldM:42,drops:['alma','sangue'],minLv:40,type:'dragon'},
+      {name:'Aranha de Ônix',icon:'🕷️',hpM:8.1,atkMin:52,atkMax:72,defM:2.9,xpM:8.0,renM:5.2,goldM:46,drops:['veneno','adamant'],minLv:42,type:'dragon'},
+      {name:'Cavaleiro Vazio',icon:'🛡️',hpM:8.7,atkMin:55,atkMax:76,defM:3.1,xpM:8.6,renM:5.6,goldM:50,drops:['adamant','alma'],minLv:44,type:'dragon'},
+      {name:'Lich Coroado',icon:'👑',hpM:9.4,atkMin:58,atkMax:81,defM:3.3,xpM:9.3,renM:6.0,goldM:54,drops:['celestial','alma'],minLv:46,type:'dragon'},
+      {name:'Avatar do Eclipse',icon:'🌘',hpM:10.2,atkMin:62,atkMax:86,defM:3.5,xpM:10.0,renM:6.5,goldM:60,drops:['celestial','sangue','adamant'],minLv:48,type:'dragon'}
+    ]}
+  ];
+
+  const GATHERING_ONLY_RESOURCES=[
+    {id:'ervas',name:'Ervas Silvestres',icon:'🌿',min:1,max:3,auto:4500},
+    {id:'fibras',name:'Fibras Naturais',icon:'🧵',min:1,max:3,auto:4700},
+    {id:'resina',name:'Resina Âmbar',icon:'🟠',min:1,max:2,auto:5200},
+    {id:'argila',name:'Argila Fina',icon:'🪵',min:1,max:3,auto:5000},
+    {id:'sal',name:'Sal Mineral',icon:'🧂',min:1,max:2,auto:5300},
+    {id:'essencia',name:'Essência Bruta',icon:'✨',min:1,max:2,auto:5600}
+  ];
+  const GATHERING_MAP=Object.fromEntries(GATHERING_ONLY_RESOURCES.map(x=>[x.id,x]));
+
+  function ensureExtraState(){
+    if(!G.meta)G.meta={version:0,lastServerVersion:0,lastMutationAt:0,sessionId:SESSION_ID,lastExternalVersion:0};
+    G.meta.sessionId=SESSION_ID;
+    if(!G.combat)G.combat={};
+    if(!G.combat.region)G.combat.region='pastos';
+    if(!G.combat.lastEnemyName)G.combat.lastEnemyName='';
+    if(!G.combat.offlineAuto)G.combat.offlineAuto=false;
+    if(!G.combat.offlineStartedAt)G.combat.offlineStartedAt=null;
+    if(!G.combat.enemyQueue)G.combat.enemyQueue=[];
+    if(!G.gathering)G.gathering={};
+    if(typeof G.gathering.autoFarm!=='boolean')G.gathering.autoFarm=false;
+    if(!G.gathering.resources||typeof G.gathering.resources!=='object')G.gathering.resources={};
+    GATHERING_ONLY_RESOURCES.forEach(r=>{ if(typeof G.gathering.resources[r.id]!=='number')G.gathering.resources[r.id]=0; });
+    if(!G.gathering.lastNode)G.gathering.lastNode='ervas';
+    if(!G.gathering.offlineStartedAt)G.gathering.offlineStartedAt=null;
+    if(typeof G.gathering.clicks!=='number')G.gathering.clicks=0;
+  }
+  ensureExtraState();
+
+  const originalSave=window.save;
+  window.save=function(){
+    ensureExtraState();
+    G.meta.lastMutationAt=Date.now();
+    try{localStorage.setItem(SK,JSON.stringify(G));}catch(e){}
+    syncToFirebase();
+  };
+
+  function insertCombatExtras(){
+    const card=document.querySelector('#tab-combat .card:last-of-type');
+    const enemyBtns=document.getElementById('enemy-btns');
+    if(enemyBtns && !document.getElementById('regionSelectorWrap')){
+      const wrap=document.createElement('div');
+      wrap.id='regionSelectorWrap';
+      wrap.style.marginBottom='8px';
+      wrap.innerHTML='<div style="font-size:10px;color:var(--muted);margin-bottom:7px;font-family:Cinzel,serif">REGIÃO DO REINO</div><div id="regionSelector" style="display:flex;gap:5px;flex-wrap:wrap"></div>';
+      enemyBtns.parentNode.insertBefore(wrap, enemyBtns);
+    }
+    const topCard=document.querySelector('#tab-combat .card');
+    if(topCard && !document.getElementById('combatEquipStatus')){
+      const box=document.createElement('div');
+      box.id='combatEquipStatus';
+      box.style.cssText='margin-top:10px;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:8px';
+      topCard.appendChild(box);
+    }
+    const gatheringTab=document.getElementById('tab-gathering');
+    const convCard=gatheringTab?gatheringTab.querySelectorAll('.card')[2]:null;
+    if(convCard)convCard.style.display='none';
+  }
+  insertCombatExtras();
+
+  function getRegionList(){
+    return COMBAT_REGIONS.map(region=>({
+      ...region,
+      unlocked:G.hero.level>=region.minLevel
+    }));
+  }
+  function getCurrentRegion(){
+    return COMBAT_REGIONS.find(r=>r.id===G.combat.region) || COMBAT_REGIONS[0];
+  }
+  function getEnemyByName(name){
+    for(const region of COMBAT_REGIONS){
+      const found=region.monsters.find(m=>m.name===name);
+      if(found)return found;
+    }
+    return BASE_ENEMIES.find(e=>e.name===name)||null;
+  }
+
+  function renderRegionSelector(){
+    const el=document.getElementById('regionSelector');
+    if(!el)return;
+    el.innerHTML=getRegionList().map(region=>{
+      const unlocked=G.hero.level>=region.minLevel;
+      return '<button class="abtn '+(region.id===G.combat.region?'pri':'')+'" style="flex:1;min-width:110px;opacity:'+(unlocked?'1':'0.45')+'" onclick="'+(unlocked?("selectCombatRegion('"+region.id+"')"):'')+'">'+region.icon+' '+region.name+'<br><span style="font-size:8px">Lv '+region.minLevel+'</span></button>';
+    }).join('');
+  }
+
+  window.selectCombatRegion=function(id){
+    const region=COMBAT_REGIONS.find(r=>r.id===id);
+    if(!region)return;
+    if(G.hero.level<region.minLevel){toast('❌ Região liberada no nível '+region.minLevel+'!');return;}
+    G.combat.region=id;
+    rebuildEBtns();
+    save();
+  };
+
+  const originalRebuild=window.rebuildEBtns;
+  window.rebuildEBtns=function(){
+    insertCombatExtras();
+    renderRegionSelector();
+    const c=document.getElementById('enemy-btns'); if(!c)return;
+    c.innerHTML='';
+    const region=getCurrentRegion();
+    region.monsters.forEach(mon=>{
+      const unlocked=G.hero.level>=mon.minLv;
+      const btn=document.createElement('button');
+      btn.className='abtn'+(G.combat.lastEnemyName===mon.name?' pri':'');
+      btn.style.minWidth='130px';
+      btn.style.opacity=unlocked?'1':'0.45';
+      btn.innerHTML=mon.icon+' '+mon.name+'<br><span style="font-size:8px">Lv '+mon.minLv+'</span>';
+      if(unlocked)btn.onclick=()=>startCombat(mon.name,false,false);
+      c.appendChild(btn);
+    });
+    const dBtn=document.createElement('button');
+    dBtn.className='abtn pri';
+    dBtn.style.opacity=G.hero.level>=15?'1':'0.45';
+    dBtn.innerHTML='👑 Chefe Diário<br><span style="font-size:8px">Lv 15+</span>';
+    dBtn.onclick=()=>{if(G.hero.level<15)return toast('❌ Masmorras e chefes liberados no nível 15!'); if(G.dailyBossKilled)toast('❌ Chefe Diário já derrotado!');else startCombat(null,true,false);};
+    c.appendChild(dBtn);
+    const wBtn=document.createElement('button');
+    wBtn.className='abtn';
+    wBtn.style.opacity=G.hero.level>=20?'1':'0.45';
+    wBtn.innerHTML='💀 Chefe Semanal<br><span style="font-size:8px">Lv 20+</span>';
+    wBtn.onclick=()=>{if(G.hero.level<20)return toast('❌ Chefe semanal liberado no nível 20!'); if(G.weeklyBossKilled)toast('❌ Chefe Semanal já derrotado!');else startCombat(null,false,true);};
+    c.appendChild(wBtn);
+  };
+
+  const originalStartCombat=window.startCombat;
+  window.startCombat=function(bname,isBoss=false,isWeekly=false){
+    ensureExtraState();
+    if(!isBoss && !isWeekly && bname){
+      const chosen=getEnemyByName(bname);
+      if(!chosen){ toast('❌ Inimigo não encontrado.'); return; }
+      if(G.hero.level<chosen.minLv){ toast('❌ Este monstro libera no nível '+chosen.minLv+'!'); return; }
+      G.combat.lastEnemyName=bname;
+    }
+    return originalStartCombat(bname,isBoss,isWeekly);
+  };
+
+  const originalScaledE=window.scaledE;
+  window.scaledE=function(base,isBoss=false){
+    return originalScaledE(base,isBoss);
+  };
+
+  window.availEnemies=function(){
+    const region=getCurrentRegion();
+    return region.monsters.filter(m=>G.hero.level>=m.minLv);
+  };
+
+  function renderCombatEquipmentStatus(){
+    const box=document.getElementById('combatEquipStatus');
+    if(!box)return;
+    const slots=[
+      ['helm','⛑ Elmo'],['chest','🛡 Peitoral'],['weapon','🗡 Arma'],['boots','👢 Botas'],
+      ['ring','💍 Anel'],['amulet','📿 Amuleto'],['gloves','🧤 Luvas'],['gem','💎 Gema']
+    ];
+    box.innerHTML='<div style="font-size:10px;color:var(--muted);margin-bottom:6px;font-family:Cinzel,serif">STATUS DOS EQUIPAMENTOS EM BATALHA</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">'+slots.map(([slot,label])=>{
+        const item=G.equipment[slot];
+        const key='dur_'+slot;
+        const cur=item?(G.durability[key] ?? item.maxDura ?? 0):0;
+        const max=item?(item.maxDura||50):0;
+        const pct=max?Math.max(0,Math.round(cur/max*100)):0;
+        let color='var(--muted)';
+        if(pct>65)color='var(--grn)'; else if(pct>35)color='var(--gold)'; else if(item)color='var(--red)';
+        return '<div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:5px;padding:6px">'+
+          '<div style="font-size:9px;color:var(--txt)">'+label+'</div>'+
+          '<div style="font-size:9px;color:'+color+'">'+(item?(cur.toFixed(cur%1?1:0)+' / '+max+' ('+pct+'%)'):'— sem item')+'</div>'+
+        '</div>';
+      }).join('')+'</div>';
+  }
+
+  const originalUpdateProfile=window.updateProfile;
+  window.updateProfile=function(){
+    originalUpdateProfile();
+    renderCombatEquipmentStatus();
+    renderPotionBar();
+  };
+
+  const originalRenderCombatUI=window.renderCombatUI;
+  window.renderCombatUI=function(){
+    originalRenderCombatUI();
+    renderCombatEquipmentStatus();
+  };
+
+  const originalUsePotion=window.usePotion;
+  window.usePotion=function(type){
+    originalUsePotion(type);
+    renderPotionBar();
+    updateProfile();
+  };
+
+  const originalBuyShopItem=window.buyShopItem;
+  window.buyShopItem=function(item){
+    originalBuyShopItem(item);
+    renderPotionBar();
+    updateProfile();
+  };
+
+  function getDurabilityPenaltyDetail(){
+    const slots=['weapon','helm','chest','boots','ring','amulet','gloves','gem'];
+    const detail=[];
+    slots.forEach(slot=>{
+      if(!G.equipment[slot])return;
+      const key='dur_'+slot;
+      const item=G.equipment[slot];
+      const before=(G.durability[key] ?? item.maxDura ?? 50);
+      const loss=Math.floor((item.maxDura||50)*0.05);
+      detail.push({slot,item:item.name,before,loss,after:Math.max(0,before-loss)});
+    });
+    return detail;
+  }
+
+  window.recoverFromGrave=function(){
+    G.hero.hp=Math.max(1, Math.floor(G.hero.hpMax*0.5));
+    G.hero.mana=Math.max(0, Math.floor(G.hero.manaMax*0.35));
+    G.combat.active=false;
+    G.combat.enemy=null;
+    const pop=document.getElementById('deathPopup');
+    if(pop)pop.remove();
+    updateProfile();
+    renderCombatUI();
+    save();
+  };
+
+  window.applyDeathPenalty=function(){
+    G.hero.deaths=(G.hero.deaths||0)+1;
+    G.progress.deaths=(G.progress.deaths||0)+1;
+    const renLoss=Math.floor(G.hero.renown*(Math.random()*0.1+0.05));
+    G.hero.renown=Math.max(0,G.hero.renown-renLoss);
+    const xpLoss=Math.floor((G.hero.xp||0)*0.15);
+    G.hero.xp=Math.max(0,(G.hero.xp||0)-xpLoss);
+    const detail=getDurabilityPenaltyDetail();
+    const brokenItems=[];
+    detail.forEach(row=>{
+      const key='dur_'+(['weapon','helm','chest','boots','ring','amulet','gloves','gem'].find(s=>G.equipment[s] && G.equipment[s].name===row.item) || '');
+    });
+    const slots=['weapon','helm','chest','boots','ring','amulet','gloves','gem'];
+    const lostLines=[];
+    slots.forEach(slot=>{
+      if(G.equipment[slot]){
+        const key='dur_'+slot;
+        const maxD=G.equipment[slot].maxDura||50;
+        const loss=Math.floor(maxD*0.05);
+        const before=G.durability[key] ?? maxD;
+        G.durability[key]=Math.max(0,before-loss);
+        lostLines.push({name:G.equipment[slot].name,loss,before,after:G.durability[key]});
+        if(G.durability[key]<=0){
+          brokenItems.push(G.equipment[slot].name);
+          destroyEquipment(slot);
+        }
+      }
+    });
+    checkAchievements();
+    showDeathPopup(renLoss,xpLoss,brokenItems,lostLines);
+    addLog(`💀 Você sofreu um ferimento muito grave! Perdeu ${renLoss} Renome, ${xpLoss} XP e durabilidade dos equipamentos.`,'sys');
+    updateProfile();
+    save();
+    return {renLoss,xpLoss,brokenItems,lostLines};
+  };
+
+  window.showDeathPopup=function(renLoss,xpLoss,brokenItems,lostLines){
+    let existing=document.getElementById('deathPopup');
+    if(existing)existing.remove();
+    const popup=document.createElement('div');
+    popup.id='deathPopup';
+    popup.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px';
+    const duraHtml=(lostLines&&lostLines.length)
+      ?'<div style="margin-top:8px;text-align:left;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:10px;line-height:1.7">'+
+        lostLines.map(x=>'<div>🔧 '+x.name+': -<strong style="color:var(--red)">'+x.loss+'</strong> ('+x.before+' → '+x.after+')</div>').join('')+
+      '</div>'
+      :'';
+    const brokenHtml=brokenItems&&brokenItems.length?`<div style="color:var(--red);font-size:10px;margin-top:6px">⚠ Itens destruídos: ${brokenItems.join(', ')}</div>`:'';
+    popup.innerHTML=`<div style="background:var(--panel);border:2px solid rgba(200,60,60,.7);border-radius:10px;padding:24px;max-width:360px;width:100%;text-align:center">
+      <div style="font-size:48px;margin-bottom:10px">💔</div>
+      <h2 style="font-family:Cinzel,serif;color:var(--red);font-size:18px;margin-bottom:8px">Ferimento Muito Grave</h2>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.7">Você caiu em batalha, mas ainda respira. O reino registrará apenas um ferimento muito grave.</p>
+      <div style="background:rgba(200,60,60,.1);border:1px solid rgba(200,60,60,.3);border-radius:6px;padding:10px;font-size:11px;line-height:2">
+        <div>💀 Renome perdido: <strong style="color:var(--red)">${renLoss.toLocaleString('pt-BR')}</strong></div>
+        <div>📉 XP perdido: <strong style="color:var(--red)">${xpLoss.toLocaleString('pt-BR')}</strong></div>
+        <div>🩹 Estado: <strong style="color:var(--txt)">Ferimento muito grave</strong></div>
+      </div>
+      ${duraHtml}
+      ${brokenHtml}
+      <button onclick="recoverFromGrave()" style="margin-top:16px;width:100%;padding:10px;background:rgba(200,60,60,.15);border:1px solid rgba(200,60,60,.5);border-radius:5px;color:var(--red);font-family:Cinzel,serif;font-size:12px;cursor:pointer">⚔ Retornar ao Jogo</button>
+    </div>`;
+    document.body.appendChild(popup);
+  };
+
+  const originalEndCombat=window.endCombat;
+  window.endCombat=function(won,isBoss=false,isWeekly=false){
+    const result=originalEndCombat(won,isBoss,isWeekly);
+    if(!won){
+      G.hero.hp=0;
+      updateProfile();
+    }
+    return result;
+  };
+
+  function getOfflineCombatEstimate(base, ms){
+    const fights=Math.max(0, Math.floor(ms / 4500));
+    if(!fights)return null;
+    const proto=scaledE(base,false);
+    const avgXp=Math.max(1, proto.xp);
+    const avgGold=Math.max(1, proto.gold);
+    const avgRen=Math.max(1, proto.ren);
+    return {
+      fights,
+      xp: avgXp * fights,
+      gold: avgGold * fights,
+      renown: Math.floor(avgRen * fights * 0.25),
+      durabilityLoss: fights
+    };
+  }
+
+  function applyOfflineCombatProgress(){
+    ensureExtraState();
+    if(!G.combat.offlineAuto || !G.combat.offlineStartedAt || !G.combat.lastEnemyName)return;
+    const elapsed=Date.now()-G.combat.offlineStartedAt;
+    if(elapsed<60000)return;
+    const base=getEnemyByName(G.combat.lastEnemyName);
+    if(!base){ G.combat.offlineStartedAt=Date.now(); return; }
+    const data=getOfflineCombatEstimate(base, elapsed);
+    if(!data){ return; }
+    gainXP(data.xp);
+    G.hero.gold+=data.gold;
+    G.hero.renown+=data.renown;
+    const slots=['weapon','helm','chest','boots','ring','amulet','gloves','gem'];
+    for(let i=0;i<data.durabilityLoss;i++){
+      slots.forEach(slot=>{ if(G.equipment[slot]) reduceDurability(slot); });
+    }
+    G.hero.kills=(G.hero.kills||0)+data.fights;
+    G.progress.kills=(G.progress.kills||0)+data.fights;
+    G.progress.streak=Math.max(G.progress.streak||0, data.fights);
+    G.combat.offlineStartedAt=Date.now();
+    addLog(`🌙 Combate offline: ${data.fights} vitórias em ${base.name}. +${data.xp} XP | +${data.gold} Ouro | +${data.renown} Renome`,'sys');
+    updateAll();
+    save();
+  }
+
+  const originalToggleAuto=window.toggleAuto;
+  window.toggleAuto=function(){
+    ensureExtraState();
+    originalToggleAuto();
+    G.combat.offlineAuto=!!G.combat.auto;
+    G.combat.offlineStartedAt=G.combat.auto?Date.now():null;
+    save();
+  };
+
+  window.addEventListener('beforeunload', function(){
+    ensureExtraState();
+    if(G.combat && G.combat.auto && G.combat.lastEnemyName){
+      G.combat.offlineAuto=true;
+      G.combat.offlineStartedAt=Date.now();
+      try{localStorage.setItem(SK, JSON.stringify(G));}catch(e){}
+    }
+    if(G.gathering && G.gathering.autoFarm){
+      G.gathering.offlineStartedAt=Date.now();
+      try{localStorage.setItem(SK, JSON.stringify(G));}catch(e){}
+    }
+  });
+
+  function applyOfflineGathering(){
+    ensureExtraState();
+    if(!G.gathering.autoFarm || !G.gathering.offlineStartedAt)return;
+    const elapsed=Date.now()-G.gathering.offlineStartedAt;
+    if(elapsed<60000)return;
+    GATHERING_ONLY_RESOURCES.forEach(node=>{
+      const cycles=Math.floor(elapsed/node.auto);
+      if(cycles>0){
+        const avg=Math.floor((node.min+node.max)/2);
+        G.gathering.resources[node.id]=(G.gathering.resources[node.id]||0)+(cycles*avg);
+      }
+    });
+    G.gathering.offlineStartedAt=Date.now();
+    renderGathering();
+    save();
+  }
+
+  function startGatherTimerV2(){
+    if(window.__roiGatherTimerV2)clearInterval(window.__roiGatherTimerV2);
+    if(!G.gathering.autoFarm)return;
+    window.__roiGatherTimerV2=setInterval(function(){
+      GATHERING_ONLY_RESOURCES.forEach(node=>{
+        const qty=rng(node.min,node.max);
+        G.gathering.resources[node.id]=(G.gathering.resources[node.id]||0)+qty;
+      });
+      G.gathering.clicks=(G.gathering.clicks||0)+GATHERING_ONLY_RESOURCES.length;
+      renderGathering();
+      save();
+    }, 5000);
+  }
+
+  window.toggleGatherAuto=function(){
+    ensureExtraState();
+    G.gathering.autoFarm=!G.gathering.autoFarm;
+    G.gathering.offlineStartedAt=G.gathering.autoFarm?Date.now():null;
+    if(G.gathering.autoFarm)startGatherTimerV2();
+    else if(window.__roiGatherTimerV2)clearInterval(window.__roiGatherTimerV2);
+    renderGathering();
+    save();
+    toast(G.gathering.autoFarm?'⛏ Auto-Farm ativado!':'⛏ Auto-Farm desativado!');
+  };
+
+  window.selectGatherNode=function(id){
+    if(!GATHERING_MAP[id])return;
+    G.gathering.lastNode=id;
+    renderGathering();
+    save();
+  };
+
+  window.gatherClick=function(id){
+    ensureExtraState();
+    const node=GATHERING_MAP[id]||GATHERING_MAP[G.gathering.lastNode]||GATHERING_ONLY_RESOURCES[0];
+    const qty=rng(node.min,node.max);
+    G.gathering.lastNode=node.id;
+    G.gathering.clicks=(G.gathering.clicks||0)+1;
+    G.gathering.resources[node.id]=(G.gathering.resources[node.id]||0)+qty;
+    renderGathering();
+    save();
+    toast(node.icon+' '+node.name+' x'+qty);
+  };
+
+  window.renderGathering=function(){
+    ensureExtraState();
+    const content=document.getElementById('gatheringContent');
+    const resEl=document.getElementById('gatheringResources');
+    const transferEl=document.getElementById('oreTransferList');
+    if(transferEl && transferEl.parentElement)transferEl.parentElement.style.display='none';
+    const cards=GATHERING_ONLY_RESOURCES.map(node=>{
+      const stock=G.gathering.resources[node.id]||0;
+      const sel=G.gathering.lastNode===node.id;
+      return '<div onclick="selectGatherNode(\''+node.id+'\')" style="background:var(--card2);border:1px solid '+(sel?'var(--gold)':'var(--border)')+';border-radius:6px;padding:10px;cursor:pointer">'+
+        '<div style="font-size:24px">'+node.icon+'</div>'+
+        '<div style="font-size:11px;color:var(--txt);margin-top:4px">'+node.name+'</div>'+
+        '<div style="font-size:9px;color:var(--muted);margin-top:3px">Quantidade: '+stock+'</div>'+
+        '<button class="abtn '+(sel?'pri':'')+'" style="width:100%;margin-top:8px;padding:7px 6px" onclick="event.stopPropagation();gatherClick(\''+node.id+'\')">⚒ Coletar</button>'+
+      '</div>';
+    }).join('');
+    if(content){
+      content.innerHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">'+cards+'</div>'+
+        '<div style="display:flex;gap:8px;margin-top:10px"><button class="abtn '+(G.gathering.autoFarm?'pri':'')+'" style="flex:1" onclick="toggleGatherAuto()">⛏ Auto-Farm '+(G.gathering.autoFarm?'ON':'OFF')+'</button>'+
+        '<div style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:10px;color:var(--muted)">Cliques totais: <strong style="color:var(--gold)">'+(G.gathering.clicks||0)+'</strong><br>Auto-Farm coleta os 6 recursos e continua offline</div></div>';
+    }
+    if(resEl){
+      resEl.innerHTML=GATHERING_ONLY_RESOURCES.map(node=>'<div style="background:var(--card2);border:1px solid var(--border);border-radius:5px;padding:8px 10px;display:flex;align-items:center;gap:6px"><span style="font-size:18px">'+node.icon+'</span><div><div style="font-size:10px;color:var(--txt)">'+node.name+'</div><div style="font-size:11px;color:var(--gold);font-weight:700">'+(G.gathering.resources[node.id]||0)+'</div></div></div>').join('');
+    }
+  };
+
+  async function claimName(name, oldName){
+    if(!firebaseInitialized||!G.userId)return {ok:true};
+    const db=firebase.firestore();
+    const clean=(name||'').trim().toLowerCase();
+    const old=(oldName||'').trim().toLowerCase();
+    try{
+      await db.runTransaction(async tx=>{
+        const newRef=db.collection('name_registry').doc(clean);
+        const newDoc=await tx.get(newRef);
+        if(newDoc.exists && newDoc.data().userId!==G.userId){
+          throw new Error('duplicate-name');
+        }
+        tx.set(newRef,{userId:G.userId,name:name,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+        if(old && old!==clean){
+          const oldRef=db.collection('name_registry').doc(old);
+          tx.delete(oldRef);
+          const oldRankRef=db.collection('ranking').doc(old.replace(/[^a-z0-9_-]/g,'_'));
+          tx.delete(oldRankRef);
+        }
+      });
+      return {ok:true};
+    }catch(e){
+      return {ok:false,error:e.message||'name-error'};
+    }
+  }
+
+  const originalConfirmFirstName=window.confirmFirstName;
+  window.confirmFirstName=async function(){
+    const n=document.getElementById('nameFirstInput')?.value.trim();
+    if(!n||n.length<2){toast('Nome inválido!');return;}
+    if(firebaseInitialized&&G.userId){
+      const res=await claimName(n,'');
+      if(!res.ok){toast('❌ Nome já está em uso no servidor.');return;}
+    }
+    G.hero.name=n.substring(0,16);
+    G.nameChangeCount=0;
+    document.getElementById('nameFirstModal').style.display='none';
+    save();updateProfile();
+    document.getElementById('classModal').style.display='flex';
+  };
+
+  window.confirmName=async function(){
+    const n=document.getElementById('nameInput')?.value.trim();
+    if(!n||n.length<2){toast('Nome inválido (mínimo 2 caracteres)!');return;}
+    const oldName=G.hero.name||'';
+    if(firebaseInitialized&&G.userId){
+      const res=await claimName(n, oldName);
+      if(!res.ok){toast('❌ Esse nome já existe no Firebase.');return;}
+    }
+    G.hero.name=n.substring(0,16);
+    G.nameChangeCount=(G.nameChangeCount||0)+1;
+    G.nameLastChanged=Date.now();
+    document.getElementById('nameModal').classList.remove('show');
+    if(firebaseInitialized&&G.userId){
+      try{
+        const db=firebase.firestore();
+        const oldKey=(oldName||'').toLowerCase().replace(/[^a-z0-9_-]/g,'_');
+        if(oldKey)await db.collection('ranking').doc(oldKey).delete();
+      }catch(e){}
+    }
+    save();updateProfile();pushRanking();toast('Nome alterado: '+G.hero.name);
+  };
+
+  let playerUnsub=null, rankingUnsub=null;
+  async function syncToFirebaseTx(){
+    ensureExtraState();
+    if(!firebaseInitialized||!G.userId||typeof firebase==='undefined'||!firebase.firestore)return;
+    const db=firebase.firestore();
+    const playerRef=db.collection('players').doc(G.userId);
+    const rankId=(G.userId||'').toLowerCase().replace(/[^a-z0-9_-]/g,'_');
+    const rankRef=db.collection('ranking').doc(rankId);
+    try{
+      await db.runTransaction(async tx=>{
+        const snap=await tx.get(playerRef);
+        const server=snap.exists?snap.data():null;
+        const serverVersion=server?.version||0;
+        if(server && serverVersion>(G.meta.lastServerVersion||0) && server.lastWriterSession && server.lastWriterSession!==SESSION_ID){
+          if(server.gameData){
+            const loaded=JSON.parse(server.gameData);
+            G=Object.assign(getDefaultG(),loaded);
+            ensureExtraState();
+            G.userId=playerRef.id;
+            G.userEmail=server.userEmail||G.userEmail||'';
+            G.meta.lastServerVersion=serverVersion;
+            G.meta.version=serverVersion;
+            localStorage.setItem(SK, JSON.stringify(G));
+            updateAll();
+          }
+          throw new Error('server-newer');
+        }
+        const nextVersion=serverVersion+1;
+        G.meta.version=nextVersion;
+        G.meta.lastServerVersion=nextVersion;
+        tx.set(playerRef,{
+          name:G.hero.name,class:G.hero.class,icon:G.hero.icon,renown:G.hero.renown,
+          level:G.hero.level,kills:G.hero.kills,prestige:G.hero.prestige,gold:G.hero.gold,
+          deaths:G.hero.deaths||0,equippedTitle:G.hero.equippedTitle||'',userEmail:G.userEmail||'',
+          version:nextVersion,lastWriterSession:SESSION_ID,
+          gameData:JSON.stringify(G),
+          lastUpdate:firebase.firestore.FieldValue.serverTimestamp(),
+          clientUpdatedAtMs:Date.now()
+        },{merge:true});
+        if(G.hero.name){
+          tx.set(rankRef,{
+            name:G.hero.name,class:G.hero.class,icon:G.hero.icon,renown:G.hero.renown,
+            level:G.hero.level,kills:G.hero.kills,prestige:G.hero.prestige,deaths:G.hero.deaths||0,
+            userId:G.userId,equippedTitle:G.hero.equippedTitle||'',
+            version:nextVersion,lastWriterSession:SESSION_ID,
+            lastUpdate:firebase.firestore.FieldValue.serverTimestamp()
+          },{merge:true});
+        }
+      });
+      const countSnap=await db.collection('players').get();
+      const onlEl=document.getElementById('onl');
+      if(onlEl)onlEl.textContent=(countSnap.size||1)+' aventureiros cadastrados';
+    }catch(e){
+      if((e.message||'')==='server-newer'){
+        toast('🔄 Dados atualizados a partir de outra sessão aberta.');
+      }else{
+        console.log('Sync tx error',e);
+      }
+    }
+  }
+  window.syncToFirebase=syncToFirebaseTx;
+
+  function attachRealtimePlayer(uid){
+    if(!firebaseInitialized||!uid)return;
+    if(playerUnsub){ try{playerUnsub();}catch(e){} playerUnsub=null; }
+    const db=firebase.firestore();
+    playerUnsub=db.collection('players').doc(uid).onSnapshot(function(doc){
+      if(!doc.exists)return;
+      const data=doc.data()||{};
+      const version=data.version||0;
+      if(!data.gameData)return;
+      if(data.lastWriterSession===SESSION_ID)return;
+      if(version<=(G.meta?.lastServerVersion||0))return;
+      try{
+        const loaded=JSON.parse(data.gameData);
+        G=Object.assign(getDefaultG(), loaded);
+        ensureExtraState();
+        G.userId=uid;
+        G.userEmail=data.userEmail||G.userEmail||'';
+        G.meta.lastServerVersion=version;
+        G.meta.version=version;
+        localStorage.setItem(SK, JSON.stringify(G));
+        updateAll();
+        toast('🔄 Progresso sincronizado em tempo real.');
+      }catch(e){console.log(e);}
+    });
+  }
+
+  const originalLoadUserData=window.loadUserDataFromFirebase;
+  window.loadUserDataFromFirebase=async function(uid){
+    ensureExtraState();
+    const result=await originalLoadUserData(uid);
+    ensureExtraState();
+    attachRealtimePlayer(uid);
+    applyOfflineCombatProgress();
+    applyOfflineGathering();
+    updateAll();
+    return result;
+  };
+
+  const originalInitFirebase=window.initFirebase;
+  window.initFirebase=function(){
+    const ok=originalInitFirebase();
+    setTimeout(function(){
+      ensureExtraState();
+      insertCombatExtras();
+      renderRegionSelector();
+      rebuildEBtns();
+      renderGathering();
+      renderCombatEquipmentStatus();
+      if(G.gathering.autoFarm)startGatherTimerV2();
+      applyOfflineCombatProgress();
+      applyOfflineGathering();
+      if(G.userId)attachRealtimePlayer(G.userId);
+    }, 400);
+    return ok;
+  };
+
+  const originalDeleteAccount=window.deleteAccount;
+  window.deleteAccount=async function(){
+    const oldName=G.hero.name||'';
+    if(firebaseInitialized&&G.userId){
+      try{
+        const db=firebase.firestore();
+        const clean=oldName.toLowerCase();
+        if(clean)await db.collection('name_registry').doc(clean).delete();
+        const rankId=(G.userId||'').toLowerCase().replace(/[^a-z0-9_-]/g,'_');
+        if(rankId)await db.collection('ranking').doc(rankId).delete();
+      }catch(e){}
+    }
+    return originalDeleteAccount();
+  };
+
+  const originalPushRanking=window.pushRanking;
+  window.pushRanking=function(){
+    if(!G.userId && !G.hero.name)return;
+    return syncToFirebaseTx();
+  };
+
+  const originalLoadRanking=window.loadRanking;
+  window.loadRanking=async function(){
+    if(firebaseInitialized&&G.userId){
+      try{
+        const db=firebase.firestore();
+        if(rankingUnsub){ try{rankingUnsub();}catch(e){} rankingUnsub=null; }
+        const field=currentRankTab==='deaths'?'deaths':'prestige';
+        rankingUnsub=db.collection('ranking').orderBy(field,'desc').limit(50).onSnapshot(()=>{ originalLoadRanking(); });
+      }catch(e){}
+    }
+    return originalLoadRanking();
+  };
+
+  const originalSw=window.sw;
+  window.sw=function(tab,btn){
+    originalSw(tab,btn);
+    if(tab==='combat'){
+      insertCombatExtras();
+      renderRegionSelector();
+      rebuildEBtns();
+      renderCombatEquipmentStatus();
+      renderPotionBar();
+    }
+    if(tab==='gathering'){
+      renderGathering();
+    }
+  };
+
+  const originalUpdateAll=window.updateAll;
+  window.updateAll=function(){
+    ensureExtraState();
+    originalUpdateAll();
+    insertCombatExtras();
+    renderRegionSelector();
+    renderCombatEquipmentStatus();
+    renderGathering();
+    renderPotionBar();
+  };
+
+  setInterval(function(){
+    ensureExtraState();
+    if(G.userId)syncToFirebaseTx();
+    updateProfile();
+    if(document.getElementById('tab-ranking')?.classList.contains('on')) loadRanking();
+    if(document.getElementById('tab-invasion')?.classList.contains('on')) renderInvasion();
+  }, 8000);
+
+  applyOfflineCombatProgress();
+  applyOfflineGathering();
+  insertCombatExtras();
+  renderRegionSelector();
+  rebuildEBtns();
+  renderGathering();
+  renderCombatEquipmentStatus();
+  renderPotionBar();
+  updateAll();
+})();
+</script>
+
 </body>
 </html>
