@@ -1300,13 +1300,14 @@ let firebaseInitialized=false;
 function initFirebase(){
   // Configuração do Firebase - VOCÊ DEVE SUBSTITUIR COM SEUS DADOS
   const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-  };
+  apiKey: "AIzaSyBtBNptJ9TxFlGArwHX9iwDQVv-9GGL9Us",
+  authDomain: "realm-of-iron.firebaseapp.com",
+  projectId: "realm-of-iron",
+  storageBucket: "realm-of-iron.firebasestorage.app",
+  messagingSenderId: "571041801417",
+  appId: "1:571041801417:web:2e0023a1fac20553331918",
+  measurementId: "G-D5V665M0EQ"
+};
   
   if(firebaseConfig.apiKey !== "YOUR_API_KEY" && !firebaseInitialized){
     if(typeof firebase !== 'undefined'){
@@ -1439,10 +1440,8 @@ function rng(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 })();
 </script>
 <!-- Firebase SDKs - Adicione para ativar login Google -->
-<!--
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
--->
 </body>
 </html>
