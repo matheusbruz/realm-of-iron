@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
+/* ... (mantenha todos os estilos exatamente como estavam) ... */
 :root {
   --gold:#c9a84c;--gold-l:#f0d080;--gold-d:#7a6030;
   --bg:#0d0e13;--panel:#13151e;--card:#1a1d29;--card2:#1f2335;
@@ -1294,52 +1295,74 @@ function confirmName(){
   save();updateProfile();pushRanking();toast('Nome: '+G.hero.name);
 }
 
-// Firebase Integration (preparado)
+// Firebase Integration - CORRIGIDO
 let firebaseInitialized=false;
+let firebaseApp=null;
 
 function initFirebase(){
-  // Configuração do Firebase - VOCÊ DEVE SUBSTITUIR COM SEUS DADOS
-  const firebaseConfig = {
-  apiKey: "AIzaSyBtBNptJ9TxFlGArwHX9iwDQVv-9GGL9Us",
-  authDomain: "realm-of-iron.firebaseapp.com",
-  projectId: "realm-of-iron",
-  storageBucket: "realm-of-iron.firebasestorage.app",
-  messagingSenderId: "571041801417",
-  appId: "1:571041801417:web:2e0023a1fac20553331918",
-  measurementId: "G-D5V665M0EQ"
-};
+  // Só inicializa se o Firebase já foi carregado e ainda não foi inicializado
+  if(typeof firebase === 'undefined' || !firebase.apps){
+    console.log('Aguardando Firebase carregar...');
+    return false;
+  }
   
-  if(firebaseConfig.apiKey !== "AIzaSyBtBNptJ9TxFlGArwHX9iwDQVv-9GGL9Us" && !firebaseInitialized){
-    if(typeof firebase !== 'undefined'){
+  if(firebaseInitialized) return true;
+  
+  try {
+    const firebaseConfig = {
+      apiKey: "AIzaSyBtBNptJ9TxFlGArwHX9iwDQVv-9GGL9Us",
+      authDomain: "realm-of-iron.firebaseapp.com",
+      projectId: "realm-of-iron",
+      storageBucket: "realm-of-iron.firebasestorage.app",
+      messagingSenderId: "571041801417",
+      appId: "1:571041801417:web:2e0023a1fac20553331918",
+      measurementId: "G-D5V665M0EQ"
+    };
+    
+    if(firebase.apps.length === 0){
       firebase.initializeApp(firebaseConfig);
-      firebaseInitialized=true;
-      console.log('Firebase inicializado!');
+      firebaseInitialized = true;
+      console.log('Firebase inicializado com sucesso!');
+      return true;
+    } else {
+      firebaseInitialized = true;
+      console.log('Firebase já estava inicializado');
+      return true;
     }
+  } catch(e){
+    console.error('Erro ao inicializar Firebase:', e);
+    return false;
   }
 }
 
 async function initGoogleLogin(){
-  if(!firebaseInitialized){
-    toast('⚠️ Firebase não configurado. Configure as credenciais primeiro!');
+  if(!initFirebase()){
+    toast('⚠️ Firebase não carregou. Tente novamente em alguns segundos.');
     return;
   }
-  const provider = new firebase.auth.GoogleAuthProvider();
-  try{
+  
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
     const result = await firebase.auth().signInWithPopup(provider);
     const user = result.user;
     G.userId = user.uid;
     G.userEmail = user.email;
     toast(`✅ Logado como ${user.displayName || user.email}`);
     loadUserDataFromFirebase(user.uid);
-  }catch(e){
-    console.error(e);
-    toast('❌ Erro no login: '+e.message);
+    document.getElementById('googleLoginBtn').style.opacity='0.7';
+    document.getElementById('googleLoginBtn').disabled=true;
+    document.getElementById('googleLoginBtn').textContent='✅ Logado';
+  } catch(e){
+    console.error('Erro no login:', e);
+    toast('❌ Erro no login: ' + (e.message || 'Tente novamente'));
   }
 }
 
 async function syncToFirebase(){
   if(!firebaseInitialized || !G.userId) return;
-  try{
+  if(typeof firebase === 'undefined' || !firebase.firestore) return;
+  
+  try {
     const db = firebase.firestore();
     await db.collection('players').doc(G.userId).set({
       name: G.hero.name,
@@ -1353,6 +1376,7 @@ async function syncToFirebase(){
       lastUpdate: firebase.firestore.FieldValue.serverTimestamp(),
       gameData: JSON.stringify(G)
     }, {merge: true});
+    
     await db.collection('ranking').doc(G.hero.name.toLowerCase().replace(/[^a-z0-9]/g,'_')).set({
       name: G.hero.name,
       class: G.hero.class,
@@ -1364,19 +1388,23 @@ async function syncToFirebase(){
       userId: G.userId,
       lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
     });
-  }catch(e){console.error('Sync Firebase:',e);}
+  } catch(e){
+    console.error('Sync Firebase:', e);
+  }
 }
 
 async function loadUserDataFromFirebase(uid){
   if(!firebaseInitialized) return;
-  try{
+  if(typeof firebase === 'undefined' || !firebase.firestore) return;
+  
+  try {
     const db = firebase.firestore();
     const doc = await db.collection('players').doc(uid).get();
     if(doc.exists){
       const data = doc.data();
       if(data.gameData){
         const loaded = JSON.parse(data.gameData);
-        G = loaded;
+        Object.assign(G, loaded);
         G.combat={active:false,auto:false,enemy:null,tid:null,buffTurns:0,buffAtk:0,buffDef:0,buffDodge:0,skillAuto:G.combat?.skillAuto||[],autoPotion:G.combat?.autoPotion||false};
         G.userId=uid;
         G.userEmail=data.userEmail;
@@ -1385,7 +1413,9 @@ async function loadUserDataFromFirebase(uid){
         toast('✅ Dados carregados do cloud!');
       }
     }
-  }catch(e){console.error('Load Firebase:',e);}
+  } catch(e){
+    console.error('Load Firebase:', e);
+  }
 }
 
 function sw(tab,btn){
@@ -1411,6 +1441,23 @@ function toast(msg){
 
 function rng(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 
+function msToMidnight(){
+  const now=new Date();
+  const tomorrow=new Date(now);
+  tomorrow.setDate(now.getDate()+1);
+  tomorrow.setHours(0,0,0,0);
+  return tomorrow-now;
+}
+
+// Aguardar Firebase carregar completamente
+function waitForFirebaseAndInit(){
+  if(typeof firebase !== 'undefined'){
+    initFirebase();
+  } else {
+    setTimeout(waitForFirebaseAndInit, 500);
+  }
+}
+
 (function init(){
   load();checkReset();
   if(!G.dailyMissions.length)G.dailyMissions=generateDailyMissions();
@@ -1431,15 +1478,11 @@ function rng(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
   setInterval(()=>{checkReset();if(document.getElementById('tab-missions')?.classList.contains('on'))renderMissions();},60000);
   setTimeout(()=>{if(G.hero.class)pushRanking();},2000);
   
-  // Inicializar Firebase se disponível
-  if(typeof firebase !== 'undefined'){
-    initFirebase();
-  } else {
-    console.log('Firebase não carregado. Ranking local apenas.');
-  }
+  // Inicializar Firebase após o carregamento da página
+  waitForFirebaseAndInit();
 })();
 </script>
-<!-- Firebase SDKs - Adicione para ativar login Google -->
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
