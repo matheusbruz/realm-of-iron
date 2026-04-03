@@ -3466,5 +3466,744 @@ function waitForFirebaseAndInit(){
 })();
 </script>
 
+
+<script>
+(function(){
+  if(typeof window==='undefined' || !window.G) return;
+
+  const EXTRA_PATCH_VERSION='v7_guardrails';
+  const RESERVED_NAMES=['admin','moderador','gm','suporte','system','sir','rei','rainha','null','undefined'];
+  const SESSION_HEARTBEAT_MS=12000;
+  const SESSION_STALE_MS=30000;
+  const REGION_AURAS={
+    pastos:{name:'Pastos do Alvorecer',desc:'Campo aberto: dano estável e ritmo seguro.',heroAtk:1.02,enemyAtk:0.98,enemyDef:0.96},
+    floresta:{name:'Floresta Sombria',desc:'Sombras fechadas: monstros mais esquivos e ataques repentinos.',heroAtk:0.98,enemyAtk:1.05,enemyDef:1.04,dodge:0.06},
+    pantanos:{name:'Pântanos da Febre',desc:'Lama e veneno: batalhas lentas e desgaste maior.',heroAtk:0.95,enemyAtk:1.08,enemyDef:1.06,drain:0.02},
+    ruinas:{name:'Ruínas Veladas',desc:'Pedra antiga e ecos: críticos e magia ressoam mais forte.',heroAtk:1.05,enemyAtk:1.04,enemyDef:1.02,crit:8},
+    abismo:{name:'Abismo da Coroa',desc:'Profundezas hostis: alto risco, grandes recompensas.',heroAtk:1.08,enemyAtk:1.10,enemyDef:1.08,crit:12}
+  };
+
+  function safeNormalizeName(name){
+    return (name||'')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'')
+      .replace(/[\u200B-\u200D\uFEFF]/g,'')
+      .replace(/\s+/g,' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function isNameVisuallySafe(name){
+    const raw=(name||'').replace(/[\u200B-\u200D\uFEFF]/g,'').trim();
+    if(raw.length<2 || raw.length>16) return false;
+    if(/[^A-Za-zÀ-ÿ0-9 _-]/.test(raw)) return false;
+    if(/^[_ -]+$/.test(raw)) return false;
+    const norm=safeNormalizeName(raw);
+    if(!norm) return false;
+    if(RESERVED_NAMES.includes(norm)) return false;
+    if(/(.)\1{4,}/.test(norm)) return false;
+    return true;
+  }
+
+  function ensureMetaAdvanced(){
+    if(!G.meta) G.meta={};
+    if(!G.meta.sessionId) G.meta.sessionId=SESSION_ID;
+    if(typeof G.meta.lastLeaseAt!=='number') G.meta.lastLeaseAt=0;
+    if(typeof G.meta.readOnlyMode!=='boolean') G.meta.readOnlyMode=false;
+    if(typeof G.meta.lastOfflineReportAt!=='number') G.meta.lastOfflineReportAt=0;
+    if(typeof G.meta.lastAuditPushAt!=='number') G.meta.lastAuditPushAt=0;
+    if(!G.meta.patchTags) G.meta.patchTags=[];
+    if(!G.meta.patchTags.includes(EXTRA_PATCH_VERSION)) G.meta.patchTags.push(EXTRA_PATCH_VERSION);
+    if(!G.tutorialFlags) G.tutorialFlags={};
+    if(!G.sessionRuntime) G.sessionRuntime={regionHintShown:false,lastOfflineSummary:null};
+  }
+  ensureMetaAdvanced();
+
+  try{
+    const extraTutorials=[
+      {id:'t_potion1',name:'Sobrevivência Básica',icon:'🧪',desc:'Use 1 poção em combate',target:1,renR:20,goldR:70,xpR:60,type:'potionsUsed'},
+      {id:'t_region1',name:'Primeira Fronteira',icon:'🗺',desc:'Lute fora dos Pastos pela primeira vez',target:1,renR:30,goldR:120,xpR:90,type:'regionsUnlocked'},
+      {id:'t_collect10',name:'Mãos ao Trabalho',icon:'⛏',desc:'Colete 10 recursos',target:10,renR:25,goldR:90,xpR:70,type:'gatherClicks'},
+      {id:'t_equip4',name:'Vestindo Aço',icon:'🛡',desc:'Equipe 4 peças de equipamento',target:4,renR:35,goldR:140,xpR:120,type:'equippedCount'}
+    ];
+    extraTutorials.forEach(m=>{
+      if(!TUTORIAL_MISSIONS.find(x=>x.id===m.id)) TUTORIAL_MISSIONS.push(m);
+    });
+  }catch(e){}
+
+  const __origCheckMissions = window.checkMissions;
+  window.checkMissions=function(){
+    if(!G.progress) G.progress={};
+    G.progress.potionsUsed = (G.progress.potionsUsed||0);
+    G.progress.gatherClicks = (G.gathering?.clicks||0);
+    G.progress.regionsUnlocked = Math.max(0, COMBAT_REGIONS.filter(r=>G.hero.level>=r.minLevel && r.id!=='pastos').length);
+    G.progress.equippedCount = Object.values(G.equipment||{}).filter(Boolean).length;
+    return __origCheckMissions.apply(this, arguments);
+  };
+
+  async function pushAuditLog(type,payload){
+    try{
+      if(!firebaseInitialized || !G.userId || typeof firebase==='undefined' || !firebase.firestore) return;
+      if(Date.now()-(G.meta.lastAuditPushAt||0) < 1000 && type==='heartbeat') return;
+      const db=firebase.firestore();
+      const ref=db.collection('players').doc(G.userId).collection('audit_logs').doc();
+      await ref.set({
+        type,
+        payload: payload||{},
+        sessionId: SESSION_ID,
+        heroName: G.hero?.name||'',
+        level: G.hero?.level||1,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdAtMs: Date.now()
+      }, {merge:true});
+      G.meta.lastAuditPushAt=Date.now();
+    }catch(e){}
+  }
+
+  async function writeSegmentedBackup(){
+    try{
+      if(!firebaseInitialized || !G.userId || typeof firebase==='undefined' || !firebase.firestore) return;
+      const db=firebase.firestore();
+      const base=db.collection('players').doc(G.userId).collection('segments');
+      const stamp = Date.now();
+      const writes = [
+        base.doc('core').set({
+          hero:G.hero, updatedAt:firebase.firestore.FieldValue.serverTimestamp(), updatedAtMs:stamp,
+          version:G.meta?.version||0, sessionId:SESSION_ID
+        }, {merge:true}),
+        base.doc('inventory').set({
+          inventory:G.inventory||[], equipment:G.equipment||{}, durability:G.durability||{},
+          materials:G.materials||{}, potions:G.potions||{},
+          updatedAt:firebase.firestore.FieldValue.serverTimestamp(), updatedAtMs:stamp,
+          version:G.meta?.version||0, sessionId:SESSION_ID
+        }, {merge:true}),
+        base.doc('progress').set({
+          progress:G.progress||{}, missions:G.missions||{}, achievements:G.achievements||{},
+          dailyMissions:G.dailyMissions||[], weeklyMissions:G.weeklyMissions||[],
+          updatedAt:firebase.firestore.FieldValue.serverTimestamp(), updatedAtMs:stamp,
+          version:G.meta?.version||0, sessionId:SESSION_ID
+        }, {merge:true}),
+        base.doc('meta').set({
+          meta:G.meta||{}, gathering:G.gathering||{}, dungeon:G.dungeon||{}, invasion:G.invasion||{},
+          lastDate:G.lastDate||'', lastWeek:G.lastWeek||'',
+          updatedAt:firebase.firestore.FieldValue.serverTimestamp(), updatedAtMs:stamp,
+          version:G.meta?.version||0, sessionId:SESSION_ID
+        }, {merge:true})
+      ];
+      await Promise.all(writes);
+    }catch(e){}
+  }
+
+  async function acquireSessionLease(forceToast){
+    try{
+      if(!firebaseInitialized || !G.userId || typeof firebase==='undefined' || !firebase.firestore) return true;
+      const db=firebase.firestore();
+      const leaseRef=db.collection('session_leases').doc(G.userId);
+      let owned=true;
+      await db.runTransaction(async tx=>{
+        const snap=await tx.get(leaseRef);
+        const data=snap.exists ? (snap.data()||{}) : {};
+        const now=Date.now();
+        const activeSession=data.sessionId;
+        const lastHeartbeat=data.lastHeartbeatMs||0;
+        const isFresh=(now-lastHeartbeat)<SESSION_STALE_MS;
+        if(activeSession && activeSession!==SESSION_ID && isFresh){
+          owned=false;
+          return;
+        }
+        tx.set(leaseRef,{
+          userId:G.userId,
+          sessionId:SESSION_ID,
+          heroName:G.hero?.name||'',
+          lastHeartbeatMs:now,
+          lastHeartbeat:firebase.firestore.FieldValue.serverTimestamp(),
+          claimedAtMs:data.claimedAtMs||now,
+          claimedAt:data.claimedAt||firebase.firestore.FieldValue.serverTimestamp()
+        }, {merge:true});
+      });
+      G.meta.readOnlyMode=!owned;
+      G.meta.lastLeaseAt=Date.now();
+      if(!owned && forceToast) toast('🔒 Outra sessão recente está com a escrita ativa. Esta janela ficará em leitura até o lease expirar.');
+      if(owned) await pushAuditLog('heartbeat',{lease:'owned'});
+      return owned;
+    }catch(e){
+      return true;
+    }
+  }
+
+  async function releaseSessionLease(){
+    try{
+      if(!firebaseInitialized || !G.userId || typeof firebase==='undefined' || !firebase.firestore) return;
+      const db=firebase.firestore();
+      const leaseRef=db.collection('session_leases').doc(G.userId);
+      const snap=await leaseRef.get();
+      if(snap.exists && (snap.data()?.sessionId)===SESSION_ID){
+        await leaseRef.delete();
+      }
+    }catch(e){}
+  }
+  window.addEventListener('beforeunload', function(){ releaseSessionLease(); });
+
+  const __origSyncTx = window.syncToFirebase;
+  window.syncToFirebase = async function(){
+    ensureMetaAdvanced();
+    const ok = await acquireSessionLease(false);
+    if(!ok){
+      G.meta.readOnlyMode=true;
+      return;
+    }
+    G.meta.readOnlyMode=false;
+    await __origSyncTx.apply(this, arguments);
+    await writeSegmentedBackup();
+  };
+
+  setInterval(function(){ acquireSessionLease(false); }, SESSION_HEARTBEAT_MS);
+
+  const __origLoadUserData2 = window.loadUserDataFromFirebase;
+  window.loadUserDataFromFirebase = async function(uid){
+    const result = await __origLoadUserData2.apply(this, arguments);
+    await acquireSessionLease(true);
+    return result;
+  };
+
+  function showOfflineSummary(report){
+    if(!report) return;
+    const old=document.getElementById('offlineSummaryPopup');
+    if(old) old.remove();
+    const popup=document.createElement('div');
+    popup.id='offlineSummaryPopup';
+    popup.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9100;display:flex;align-items:center;justify-content:center;padding:16px';
+    popup.innerHTML='<div style="background:var(--panel);border:1px solid var(--border-b);border-radius:10px;padding:22px;max-width:420px;width:100%">'+
+      '<div style="font-family:Cinzel,serif;color:var(--gold);font-size:18px;text-align:center;margin-bottom:12px">📜 Relatório de Ausência</div>'+
+      '<div style="font-size:11px;color:var(--muted);line-height:1.9">'+
+      (report.combat ? `<div>⚔ Batalhas resolvidas: <strong style="color:var(--txt)">${report.combat.fights}</strong></div>
+        <div>✨ XP: <strong style="color:var(--blu)">+${report.combat.xp}</strong></div>
+        <div>💰 Ouro: <strong style="color:var(--gold)">+${report.combat.gold}</strong></div>
+        <div>🎖 Renome: <strong style="color:var(--rg)">+${report.combat.renown}</strong></div>` : '<div>⚔ Sem batalhas offline registradas.</div>')+
+      (report.gather ? report.gather.lines.map(l=>`<div>${l.icon} ${l.name}: <strong style="color:var(--txt)">+${l.qty}</strong></div>`).join('') : '<div>⛏ Sem coleta offline registrada.</div>')+
+      '</div>'+
+      '<button onclick="document.getElementById(\'offlineSummaryPopup\').remove()" class="abtn pri" style="width:100%;margin-top:14px">Entendido</button>'+
+      '</div>';
+    document.body.appendChild(popup);
+  }
+
+  const __origApplyOfflineCombat = window.applyOfflineCombatProgress;
+  window.applyOfflineCombatProgress = function(){
+    const before = {xp:G.hero.xp,gold:G.hero.gold,ren:G.hero.renown,kills:G.hero.kills};
+    const ret = __origApplyOfflineCombat.apply(this, arguments);
+    const after = {xp:G.hero.xp,gold:G.hero.gold,ren:G.hero.renown,kills:G.hero.kills};
+    const fights = Math.max(0, (after.kills||0)-(before.kills||0));
+    if(fights>0){
+      G.sessionRuntime.lastOfflineSummary = G.sessionRuntime.lastOfflineSummary || {};
+      G.sessionRuntime.lastOfflineSummary.combat = {
+        fights,
+        xp: Math.max(0, (after.xp||0)-(before.xp||0)),
+        gold: Math.max(0, (after.gold||0)-(before.gold||0)),
+        renown: Math.max(0, (after.ren||0)-(before.ren||0))
+      };
+    }
+    return ret;
+  };
+
+  const __origApplyOfflineGather = window.applyOfflineGathering;
+  window.applyOfflineGathering = function(){
+    const before = JSON.parse(JSON.stringify(G.gathering?.resources||{}));
+    const ret = __origApplyOfflineGather.apply(this, arguments);
+    const lines=[];
+    (GATHERING_ONLY_RESOURCES||[]).forEach(node=>{
+      const diff=(G.gathering?.resources?.[node.id]||0)-(before[node.id]||0);
+      if(diff>0) lines.push({icon:node.icon,name:node.name,qty:diff});
+    });
+    if(lines.length){
+      G.sessionRuntime.lastOfflineSummary = G.sessionRuntime.lastOfflineSummary || {};
+      G.sessionRuntime.lastOfflineSummary.gather = {lines};
+    }
+    return ret;
+  };
+
+  setTimeout(function(){
+    if(G.sessionRuntime?.lastOfflineSummary && Date.now()-(G.meta.lastOfflineReportAt||0)>3000){
+      G.meta.lastOfflineReportAt=Date.now();
+      showOfflineSummary(G.sessionRuntime.lastOfflineSummary);
+      G.sessionRuntime.lastOfflineSummary=null;
+      try{ localStorage.setItem(SK, JSON.stringify(G)); }catch(e){}
+    }
+  }, 1000);
+
+  function getRegionAura(){
+    const id=G.combat?.region||'pastos';
+    return REGION_AURAS[id] || REGION_AURAS.pastos;
+  }
+
+  function renderCombatIdentityBox(){
+    const card=document.querySelector('#tab-combat .card');
+    if(!card) return;
+    let box=document.getElementById('combatIdentityBox');
+    if(!box){
+      box=document.createElement('div');
+      box.id='combatIdentityBox';
+      box.style.cssText='margin-top:10px;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:8px';
+      card.appendChild(box);
+    }
+    const aura=getRegionAura();
+    const classPassive={
+      str:'🛡 Guerreiro: chance de bloquear parte do dano.',
+      int:'🔮 Mago: poder arcano cresce com o mana alto.',
+      agi:'🏹 Arqueiro: esquiva e crítico ficam mais letais.',
+      pal:'✨ Paladino: resistência aumenta quando a vida cai.'
+    }[G.hero.classType||''] || '—';
+    box.innerHTML='<div style="font-size:10px;color:var(--muted);font-family:Cinzel,serif;margin-bottom:5px">IDENTIDADE DE COMBATE</div>'+
+      `<div style="font-size:10px;color:var(--gold)">${aura.name}</div>`+
+      `<div style="font-size:9px;color:var(--muted);margin-top:2px">${aura.desc}</div>`+
+      `<div style="font-size:9px;color:var(--txt);margin-top:6px">${classPassive}</div>`+
+      (G.meta.readOnlyMode?'<div style="font-size:9px;color:var(--red);margin-top:6px">🔒 Escrita bloqueada nesta sessão para evitar conflito com outra janela.</div>':'');
+  }
+
+  const __origCombatTick = window.combatTick;
+  window.combatTick=function(isBoss,isWeekly){
+    if(!G.combat.active || !G.combat.enemy) return __origCombatTick.apply(this, arguments);
+    const h=G.hero, e=G.combat.enemy;
+    checkAutoPotion();
+    if(G.combat.skillAuto && G.combat.skillAuto.some(v=>v) && h.mana>=15 && (!G.combat.skillCooldown||G.combat.skillCooldown<=Date.now())){
+      const skills=SKILLS_BY_CLASS[h.classType];
+      if(skills){
+        for(let i=0;i<skills.length;i++){
+          if(G.combat.skillAuto[i] && h.mana>=skills[i].cost){ useSkill(skills[i],i); break; }
+        }
+      }
+    }
+    if(h.buffTurns>0){
+      h.buffTurns--;
+      if(h.buffTurns<=0){
+        h.buffAtk=0;h.buffDef=0;h.buffDodge=0;
+        addLog('✨ Buffs expiraram.','sys');
+      }
+    }
+    const aura=getRegionAura();
+    const heroCrit=(h.crit||0)+(aura.crit||0);
+    let ca=(h.atk*(1+(h.buffAtk||0)))*(aura.heroAtk||1);
+    let cd=(h.def+(h.buffDef||0));
+    let enemyDef=(e.def||0)*(aura.enemyDef||1);
+    let enemyAtk=(e.atk||0)*(aura.enemyAtk||1);
+
+    if(h.classType==='int' && h.mana > (h.manaMax*0.6)) ca*=1.12;
+    if(h.classType==='agi') h.buffDodge=Math.max(h.buffDodge||0, 0.10);
+    if(h.classType==='pal' && h.hp < (h.hpMax*0.35)) cd += 18;
+    const isCrit=Math.random()*100<heroCrit;
+    let dE=Math.max(1, Math.floor(ca-enemyDef+rng(-2,5)));
+    if(G.hero.hasSirBlessing) dE=Math.floor(dE*1.15);
+    if(h.classType==='agi' && isCrit) dE=Math.floor(dE*2.05);
+    else if(isCrit) dE=Math.floor(dE*1.9);
+
+    let dH=Math.max(1, Math.floor(enemyAtk-cd+rng(-2,4)));
+    if(Math.random()<(h.buffDodge||0)+(aura.dodge||0)){ addLog('💨 Esquivou!','heal'); dH=0; }
+    if(h.classType==='str' && dH>0 && Math.random()<0.12){
+      const blocked=Math.max(1, Math.floor(dH*0.35));
+      dH=Math.max(0,dH-blocked);
+      addLog(`🛡 Bloqueio de aço: -${blocked} dano`,'heal');
+    }
+    if(h.classType==='pal' && Math.random()<0.25){
+      const reg=Math.floor(h.hpMax*0.04); h.hp=Math.min(h.hpMax,h.hp+reg); addLog(`✨ Reg: +${reg} HP`,'heal');
+    }
+    if(aura.drain && dH>0){
+      const extra=Math.max(1, Math.floor(h.hpMax*aura.drain));
+      dH += extra;
+      addLog(`🫧 O terreno hostil drena ${extra} HP extra.`, 'dmg');
+    }
+
+    e.hp-=dE;
+    h.hp-=dH;
+    h.hp=Math.max(0,h.hp);
+
+    if(h.classType==='int' && Math.random()<0.18){
+      const manaGain=Math.min(8, Math.max(3, Math.floor(h.manaMax*0.06)));
+      h.mana=Math.min(h.manaMax, h.mana+manaGain);
+      addLog(`🔮 Eco arcano: +${manaGain} mana`,'heal');
+    }
+
+    addLog(`${h.icon}→${e.icon} ${dE}${isCrit?' 💥CRÍTICO!':''}`,'dmg');
+    if(dH>0) addLog(`${e.icon}→${h.icon} ${dH}`,'dmg');
+
+    renderCombatUI();
+    renderCombatIdentityBox();
+    if(e.hp<=0) endCombat(true,isBoss,isWeekly);
+    else if(h.hp<=0) endCombat(false);
+    else updateProfile();
+  };
+
+  const __origSelectRegion = window.selectCombatRegion;
+  window.selectCombatRegion=function(id){
+    const r = __origSelectRegion.apply(this, arguments);
+    const aura=REGION_AURAS[id];
+    if(aura) toast(`🗺 ${aura.name}: ${aura.desc}`);
+    renderCombatIdentityBox();
+    return r;
+  };
+
+  const __origStartCombat2=window.startCombat;
+  window.startCombat=function(){
+    const out=__origStartCombat2.apply(this, arguments);
+    const aura=getRegionAura();
+    if(!G.sessionRuntime.regionHintShown || G.combat.region!==G.sessionRuntime.lastRegionHint){
+      addLog(`🗺 Região: ${aura.name} — ${aura.desc}`,'sys');
+      G.sessionRuntime.regionHintShown=true;
+      G.sessionRuntime.lastRegionHint=G.combat.region;
+    }
+    renderCombatIdentityBox();
+    return out;
+  };
+
+  window.fullRecoverFromGrave=function(){
+    const cost=Math.max(100, Math.floor((G.hero.level||1)*35));
+    if((G.hero.gold||0) < cost){ toast('💰 Ouro insuficiente para tratamento completo.'); return; }
+    G.hero.gold -= cost;
+    G.hero.hp = G.hero.hpMax;
+    G.hero.mana = G.hero.manaMax;
+    G.combat.active=false;
+    G.combat.enemy=null;
+    const pop=document.getElementById('deathPopup');
+    if(pop) pop.remove();
+    addLog(`🏥 Tratamento completo pago: ${cost} ouro.`, 'sys');
+    updateProfile(); renderCombatUI(); save(); pushAuditLog('grave_recovery',{mode:'full',cost});
+  };
+
+  const __origRecoverFromGrave=window.recoverFromGrave;
+  window.recoverFromGrave=function(){
+    const ret=__origRecoverFromGrave.apply(this, arguments);
+    pushAuditLog('grave_recovery',{mode:'basic'});
+    return ret;
+  };
+
+  const __origShowDeathPopup2 = window.showDeathPopup;
+  window.showDeathPopup=function(renLoss,xpLoss,brokenItems,lostLines){
+    __origShowDeathPopup2.apply(this, arguments);
+    const popup=document.getElementById('deathPopup');
+    if(!popup) return;
+    const box=popup.querySelector('div');
+    if(!box) return;
+    const cost=Math.max(100, Math.floor((G.hero.level||1)*35));
+    const add=document.createElement('div');
+    add.innerHTML='<button onclick="fullRecoverFromGrave()" style="margin-top:8px;width:100%;padding:10px;background:rgba(201,168,76,.12);border:1px solid var(--border-b);border-radius:5px;color:var(--gold);font-family:Cinzel,serif;font-size:12px;cursor:pointer">🏥 Tratamento Completo ('+cost+' ouro)</button>'+
+      '<div style="margin-top:8px;font-size:10px;color:var(--muted)">Voltar ferido mantém parte do risco. Tratamento completo restaura totalmente HP e MANA.</div>';
+    box.appendChild(add);
+  };
+
+  const __origUsePotion2 = window.usePotion;
+  window.usePotion=function(type){
+    const before=JSON.stringify(G.potions||{});
+    const ret = __origUsePotion2.apply(this, arguments);
+    if(before!==JSON.stringify(G.potions||{})){
+      G.progress.potionsUsed=(G.progress.potionsUsed||0)+1;
+      pushAuditLog('use_potion',{type,stock:G.potions?.[type]||0});
+      checkMissions();
+    }
+    return ret;
+  };
+
+  const __origBuyShopItem2 = window.buyShopItem;
+  window.buyShopItem=function(item){
+    const beforeGold=G.hero.gold;
+    const ret=__origBuyShopItem2.apply(this, arguments);
+    if(beforeGold!==G.hero.gold){
+      pushAuditLog('shop_purchase',{item:item?.name||'', type:item?.type||'', price:item?.price||0});
+    }
+    return ret;
+  };
+
+  const __origGatherClick2 = window.gatherClick;
+  window.gatherClick=function(id){
+    const ret=__origGatherClick2.apply(this, arguments);
+    G.progress.gatherClicks=(G.gathering?.clicks||0);
+    checkMissions();
+    return ret;
+  };
+
+  const __origDoPrestige2=window.doPrestige;
+  window.doPrestige=function(){
+    const before=G.hero.prestige||0;
+    const ret=__origDoPrestige2.apply(this, arguments);
+    if((G.hero.prestige||0)>before){
+      pushAuditLog('prestige',{prestige:G.hero.prestige});
+    }
+    return ret;
+  };
+
+  const __origApplyDeathPenalty2 = window.applyDeathPenalty;
+  window.applyDeathPenalty=function(){
+    const data=__origApplyDeathPenalty2.apply(this, arguments);
+    pushAuditLog('death_penalty', data || {});
+    return data;
+  };
+
+  async function assertIdentityRegistry(name){
+    if(!firebaseInitialized || !G.userId || typeof firebase==='undefined' || !firebase.firestore) return {ok:true};
+    const db=firebase.firestore();
+    const safe=safeNormalizeName(name);
+    if(!safe) return {ok:false,error:'invalid'};
+    try{
+      await db.runTransaction(async tx=>{
+        const uidRef=db.collection('uid_registry').doc(G.userId);
+        const nameRef=db.collection('name_registry_safe').doc(safe);
+        const uidSnap=await tx.get(uidRef);
+        const nameSnap=await tx.get(nameRef);
+        if(nameSnap.exists && nameSnap.data().userId!==G.userId) throw new Error('duplicate-name-safe');
+        if(uidSnap.exists && uidSnap.data().blocked) throw new Error('blocked-user');
+        tx.set(uidRef,{
+          userId:G.userId,
+          safeName:safe,
+          heroName:name,
+          updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+          sessionId:SESSION_ID
+        }, {merge:true});
+        tx.set(nameRef,{
+          userId:G.userId,
+          heroName:name,
+          updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+        }, {merge:true});
+      });
+      return {ok:true};
+    }catch(e){
+      return {ok:false,error:e.message||'identity-registry'};
+    }
+  }
+
+  const __origConfirmFirstName2 = window.confirmFirstName;
+  window.confirmFirstName = async function(){
+    const n=document.getElementById('nameFirstInput')?.value||'';
+    if(!isNameVisuallySafe(n)){ toast('❌ Nome inválido ou visualmente confuso.'); return; }
+    const res=await assertIdentityRegistry(n);
+    if(!res.ok){ toast('❌ Nome já reservado ou conta inconsistente no servidor.'); return; }
+    return __origConfirmFirstName2.apply(this, arguments);
+  };
+
+  const __origConfirmName2 = window.confirmName;
+  window.confirmName = async function(){
+    const n=document.getElementById('nameInput')?.value||'';
+    if(!isNameVisuallySafe(n)){ toast('❌ Nome inválido ou visualmente confuso.'); return; }
+    const oldSafe=safeNormalizeName(G.hero.name||'');
+    const newSafe=safeNormalizeName(n);
+    const res=await assertIdentityRegistry(n);
+    if(!res.ok){ toast('❌ Nome já reservado ou conta inconsistente no servidor.'); return; }
+    const out=await __origConfirmName2.apply(this, arguments);
+    try{
+      if(firebaseInitialized && G.userId && typeof firebase!=='undefined' && firebase.firestore && oldSafe && oldSafe!==newSafe){
+        const db=firebase.firestore();
+        await db.collection('name_registry_safe').doc(oldSafe).delete();
+      }
+    }catch(e){}
+    pushAuditLog('rename',{oldSafe,newSafe,newName:n});
+    return out;
+  };
+
+  const __origRenderMissions2 = window.renderMissions;
+  window.renderMissions=function(){
+    const ret=__origRenderMissions2.apply(this, arguments);
+    const tut=document.getElementById('tutorial-list');
+    if(tut){
+      const hint=document.getElementById('tutorialGuideBox');
+      if(!hint){
+        const box=document.createElement('div');
+        box.id='tutorialGuideBox';
+        box.style.cssText='margin-top:8px;background:rgba(201,168,76,.06);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:10px;line-height:1.8;color:var(--muted)';
+        box.innerHTML='<div style="font-family:Cinzel,serif;color:var(--gold);margin-bottom:4px">ROTEIRO INICIAL DO REINO</div>'+
+          '<div>1. Vença um inimigo nos Pastos.</div>'+
+          '<div>2. Use uma poção para aprender sobrevivência.</div>'+
+          '<div>3. Colete recursos na aba de Coleta.</div>'+
+          '<div>4. Forje ao menos um item.</div>'+
+          '<div>5. Equipe 4 peças e avance para a próxima região.</div>';
+        tut.parentElement.appendChild(box);
+      }
+    }
+    return ret;
+  };
+
+  const __origRenderCombatUI2=window.renderCombatUI;
+  window.renderCombatUI=function(){
+    const ret=__origRenderCombatUI2.apply(this, arguments);
+    renderCombatIdentityBox();
+    return ret;
+  };
+
+  const __origUpdateAll2=window.updateAll;
+  window.updateAll=function(){
+    const ret=__origUpdateAll2.apply(this, arguments);
+    renderCombatIdentityBox();
+    return ret;
+  };
+
+  setTimeout(function(){
+    renderCombatIdentityBox();
+    checkMissions();
+    renderMissions();
+  }, 600);
+})();
+</script>
+
+
+<script>
+(function(){
+  const GATHER_ALLOWED = [
+    {id:'ervas',name:'Ervas Silvestres',icon:'🌿'},
+    {id:'fibras',name:'Fibras Naturais',icon:'🧵'},
+    {id:'resina',name:'Resina Âmbar',icon:'🟠'},
+    {id:'argila',name:'Argila Fina',icon:'🪵'},
+    {id:'sal',name:'Sal Mineral',icon:'🧂'},
+    {id:'essencia',name:'Essência Bruta',icon:'✨'}
+  ];
+  const GATHER_ALLOWED_IDS = new Set(GATHER_ALLOWED.map(x=>x.id));
+
+  function roiEnsureSessionRuntime(){
+    if(!window.G) return;
+    if(!G.sessionRuntime || typeof G.sessionRuntime!=='object'){
+      G.sessionRuntime = {regionHintShown:false,lastOfflineSummary:null,lastRegionHint:null};
+    }
+    if(!G.combat || typeof G.combat!=='object') G.combat={};
+    if(!Array.isArray(G.combat.skillAuto)) G.combat.skillAuto=[];
+    G.combat.skillAuto=[];
+    if(!G.gathering || typeof G.gathering!=='object') G.gathering={};
+    if(!G.gathering.resources || typeof G.gathering.resources!=='object') G.gathering.resources={};
+    const cleaned={};
+    GATHER_ALLOWED.forEach(node=>{ cleaned[node.id]=Number(G.gathering.resources[node.id]||0); });
+    G.gathering.resources=cleaned;
+    if(!GATHER_ALLOWED_IDS.has(G.gathering.lastNode)) G.gathering.lastNode='ervas';
+  }
+
+  function roiHideSkillBar(){
+    const bar=document.getElementById('skillbar');
+    if(bar){
+      bar.innerHTML='';
+      bar.style.display='none';
+    }
+  }
+
+  function roiForceGatheringOnly(){
+    roiEnsureSessionRuntime();
+    const gatheringTab=document.getElementById('tab-gathering');
+    if(gatheringTab){
+      const cards=gatheringTab.querySelectorAll('.card');
+      if(cards[2]) cards[2].style.display='none';
+    }
+    const transferEl=document.getElementById('oreTransferList');
+    if(transferEl) transferEl.innerHTML='';
+
+    const content=document.getElementById('gatheringContent');
+    const resEl=document.getElementById('gatheringResources');
+    if(content){
+      const cardsHtml = GATHER_ALLOWED.map(node=>{
+        const stock = Number((G.gathering.resources||{})[node.id]||0);
+        const selected = G.gathering.lastNode===node.id;
+        return '<div onclick="selectGatherNode(\''+node.id+'\')" style="background:var(--card2);border:1px solid '+(selected?'var(--gold)':'var(--border)')+';border-radius:6px;padding:10px;cursor:pointer">'+
+          '<div style="font-size:24px">'+node.icon+'</div>'+
+          '<div style="font-size:11px;color:var(--txt);margin-top:4px">'+node.name+'</div>'+
+          '<div style="font-size:9px;color:var(--muted);margin-top:3px">Quantidade: '+stock+'</div>'+
+          '<button class="abtn '+(selected?'pri':'')+'" style="width:100%;margin-top:8px;padding:7px 6px" onclick="event.stopPropagation();gatherClick(\''+node.id+'\')">⚒ Coletar</button>'+
+        '</div>';
+      }).join('');
+      content.innerHTML = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">'+cardsHtml+'</div>'+
+        '<div style="display:flex;gap:8px;margin-top:10px">'+
+        '<button class="abtn '+(G.gathering.autoFarm?'pri':'')+'" style="flex:1" onclick="toggleGatherAuto()">⛏ Auto-Farm '+(G.gathering.autoFarm?'ON':'OFF')+'</button>'+
+        '<div style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:10px;color:var(--muted)">Cliques totais: <strong style="color:var(--gold)">'+(G.gathering.clicks||0)+'</strong><br>Auto-Farm coleta os 6 recursos e continua offline</div></div>';
+    }
+    if(resEl){
+      resEl.innerHTML = GATHER_ALLOWED.map(node=>'<div style="background:var(--card2);border:1px solid var(--border);border-radius:5px;padding:8px 10px;display:flex;align-items:center;gap:6px"><span style="font-size:18px">'+node.icon+'</span><div><div style="font-size:10px;color:var(--txt)">'+node.name+'</div><div style="font-size:11px;color:var(--gold);font-weight:700">'+Number((G.gathering.resources||{})[node.id]||0)+'</div></div></div>').join('');
+    }
+  }
+
+  const __roiRenderGatheringHotfix = window.renderGathering;
+  window.renderGathering = function(){
+    roiEnsureSessionRuntime();
+    if(typeof __roiRenderGatheringHotfix === 'function'){
+      try{ __roiRenderGatheringHotfix.apply(this, arguments); }catch(e){ console.error('renderGathering hotfix fallback', e); }
+    }
+    roiForceGatheringOnly();
+  };
+
+  window.renderSkillBar = function(){ roiHideSkillBar(); };
+
+  const __roiCombatTickHotfix = window.combatTick;
+  window.combatTick = function(){
+    roiEnsureSessionRuntime();
+    G.combat.skillAuto = [];
+    return __roiCombatTickHotfix.apply(this, arguments);
+  };
+
+  const __roiUpdateProfileHotfix = window.updateProfile;
+  window.updateProfile = function(){
+    roiEnsureSessionRuntime();
+    const out = __roiUpdateProfileHotfix.apply(this, arguments);
+    roiHideSkillBar();
+    return out;
+  };
+
+  const __roiRenderCombatUIHotfix = window.renderCombatUI;
+  window.renderCombatUI = function(){
+    const out = __roiRenderCombatUIHotfix.apply(this, arguments);
+    roiHideSkillBar();
+    return out;
+  };
+
+  const __roiStartCombatHotfix = window.startCombat;
+  window.startCombat = function(){
+    roiEnsureSessionRuntime();
+    try{
+      const out = __roiStartCombatHotfix.apply(this, arguments);
+      roiEnsureSessionRuntime();
+      if(G.combat && G.combat.active && G.combat.enemy){
+        if(typeof updateProfile==='function') updateProfile();
+        if(typeof renderCombatUI==='function') renderCombatUI();
+      }
+      return out;
+    }catch(err){
+      console.error('startCombat hotfix rescue', err);
+      roiEnsureSessionRuntime();
+      if(G.combat && G.combat.active && G.combat.enemy){
+        try{
+          if(typeof addLog==='function') addLog('⚔ Combate retomado após correção de sessão.','sys');
+          if(typeof updateProfile==='function') updateProfile();
+          if(typeof renderCombatUI==='function') renderCombatUI();
+          return;
+        }catch(_){}
+      }
+      const enemyName = arguments[0];
+      try{
+        const base = (typeof getEnemyByName==='function' ? getEnemyByName(enemyName) : null) ||
+                     (window.BASE_ENEMIES||[]).find(e=>e.name===enemyName);
+        if(base && typeof scaledE==='function'){
+          G.combat.active = true;
+          G.combat.enemy = scaledE(base, false);
+          G.combat.lastEnemyName = base.name;
+          if(typeof addLog==='function') addLog('⚔ Você enfrenta '+base.name+'!','sys');
+          if(G.combat.tid) clearTimeout(G.combat.tid);
+          if(typeof combatTick==='function') G.combat.tid = setTimeout(function(){ combatTick(false,false); }, 700);
+          if(typeof updateProfile==='function') updateProfile();
+          if(typeof renderCombatUI==='function') renderCombatUI();
+          if(typeof save==='function') save();
+          return;
+        }
+      }catch(e2){ console.error('fallback combat start failed', e2); }
+      if(typeof toast==='function') toast('❌ Houve um erro ao iniciar o combate.');
+    }
+  };
+
+  const __roiRecoverFromGraveHotfix = window.recoverFromGrave;
+  window.recoverFromGrave = function(){
+    roiEnsureSessionRuntime();
+    const ret = __roiRecoverFromGraveHotfix.apply(this, arguments);
+    if(window.G && G.hero){
+      G.hero.hp = Math.max(1, G.hero.hp || Math.floor((G.hero.hpMax||1)*0.5));
+      G.hero.mana = Math.max(0, G.hero.mana || Math.floor((G.hero.manaMax||0)*0.35));
+    }
+    if(typeof updateProfile==='function') updateProfile();
+    if(typeof renderCombatUI==='function') renderCombatUI();
+    return ret;
+  };
+
+  roiEnsureSessionRuntime();
+  roiHideSkillBar();
+  roiForceGatheringOnly();
+  setTimeout(function(){ roiEnsureSessionRuntime(); roiHideSkillBar(); roiForceGatheringOnly(); if(typeof rebuildEBtns==='function') rebuildEBtns(); }, 50);
+})();
+</script>
+
 </body>
 </html>
