@@ -5676,6 +5676,141 @@ function waitForFirebaseAndInit(){
   }, 50);
 })();
 
+
+
+/* v11 regional monster click delegation hotfix */
+(function(){
+  function roiGetEnemyByName(name){
+    if(!name) return null;
+    try{
+      if(Array.isArray(window.COMBAT_REGIONS)){
+        for(const region of window.COMBAT_REGIONS){
+          const found=(region.monsters||[]).find(m=>m.name===name);
+          if(found) return found;
+        }
+      }
+    }catch(e){}
+    try{
+      if(typeof getEnemyByName==='function'){
+        const found=getEnemyByName(name);
+        if(found) return found;
+      }
+    }catch(e){}
+    try{
+      if(Array.isArray(window.BASE_ENEMIES)){
+        return window.BASE_ENEMIES.find(e=>e.name===name)||null;
+      }
+    }catch(e){}
+    return null;
+  }
+  window.roiGetEnemyByName = roiGetEnemyByName;
+  try{ window.getEnemyByName = roiGetEnemyByName; }catch(e){}
+
+  const __roiV11StartCombat = window.startCombat;
+  window.startCombat = startCombat = function(bname,isBoss=false,isWeekly=false){
+    if(!isBoss && !isWeekly && bname){
+      const base = roiGetEnemyByName(bname);
+      if(!base){
+        if(typeof toast==='function') toast('❌ Inimigo regional não encontrado.');
+        return;
+      }
+      const needLv = Number(base.minLv||1);
+      if((window.G?.hero?.level||1) < needLv){
+        if(typeof toast==='function') toast('❌ Este monstro libera no nível '+needLv+'!');
+        return;
+      }
+    }
+    return __roiV11StartCombat.call(this,bname,isBoss,isWeekly);
+  };
+
+  function roiRenderRegionalButtons(){
+    const c=document.getElementById('enemy-btns');
+    if(!c) return;
+    let region=null;
+    try{ region = typeof getCurrentRegion==='function' ? getCurrentRegion() : null; }catch(e){}
+    if(!region || !Array.isArray(region.monsters)) return;
+
+    c.innerHTML='';
+    for(const mon of region.monsters){
+      const unlocked=(window.G?.hero?.level||1) >= Number(mon.minLv||1);
+      const btn=document.createElement('button');
+      btn.type='button';
+      btn.className='abtn'+(((window.G?.combat?.lastEnemyName||'')===mon.name)?' pri':'');
+      btn.style.minWidth='130px';
+      btn.style.opacity=unlocked?'1':'0.45';
+      btn.dataset.enemyName=mon.name;
+      btn.dataset.enemyUnlocked=unlocked?'1':'0';
+      btn.innerHTML=mon.icon+' '+mon.name+'<br><span style="font-size:8px">Lv '+mon.minLv+'</span>';
+      c.appendChild(btn);
+    }
+
+    const dBtn=document.createElement('button');
+    dBtn.type='button';
+    dBtn.className='abtn pri';
+    dBtn.style.opacity=(window.G?.hero?.level||1)>=15?'1':'0.45';
+    dBtn.dataset.specialFight='daily';
+    dBtn.innerHTML='👑 Chefe Diário<br><span style="font-size:8px">Lv 15+</span>';
+    c.appendChild(dBtn);
+
+    const wBtn=document.createElement('button');
+    wBtn.type='button';
+    wBtn.className='abtn';
+    wBtn.style.opacity=(window.G?.hero?.level||1)>=20?'1':'0.45';
+    wBtn.dataset.specialFight='weekly';
+    wBtn.innerHTML='💀 Chefe Semanal<br><span style="font-size:8px">Lv 20+</span>';
+    c.appendChild(wBtn);
+  }
+
+  const __roiV11Rebuild = window.rebuildEBtns;
+  window.rebuildEBtns = rebuildEBtns = function(){
+    try{
+      if(typeof renderRegionSelector==='function') renderRegionSelector();
+      roiRenderRegionalButtons();
+    }catch(e){
+      console.error('v11 rebuild regional buttons', e);
+      if(typeof __roiV11Rebuild==='function') return __roiV11Rebuild.apply(this, arguments);
+    }
+  };
+
+  function roiBindEnemyDelegation(){
+    const c=document.getElementById('enemy-btns');
+    if(!c || c.dataset.roiDelegated==='1') return;
+    c.dataset.roiDelegated='1';
+    c.addEventListener('click', function(ev){
+      const btn = ev.target.closest('button');
+      if(!btn || !c.contains(btn)) return;
+      const special = btn.dataset.specialFight;
+      if(special==='daily'){
+        if((window.G?.hero?.level||1)<15) return typeof toast==='function' && toast('❌ Masmorras e chefes liberados no nível 15!');
+        if(window.G?.dailyBossKilled) return typeof toast==='function' && toast('❌ Chefe Diário já derrotado!');
+        return window.startCombat(null,true,false);
+      }
+      if(special==='weekly'){
+        if((window.G?.hero?.level||1)<20) return typeof toast==='function' && toast('❌ Chefe semanal liberado no nível 20!');
+        if(window.G?.weeklyBossKilled) return typeof toast==='function' && toast('❌ Chefe Semanal já derrotado!');
+        return window.startCombat(null,false,true);
+      }
+      const enemyName = btn.dataset.enemyName;
+      if(enemyName){
+        if(btn.dataset.enemyUnlocked!=='1'){
+          const base=roiGetEnemyByName(enemyName);
+          const needLv=Number(base?.minLv||1);
+          return typeof toast==='function' && toast('❌ Este monstro libera no nível '+needLv+'!');
+        }
+        return window.startCombat(enemyName,false,false);
+      }
+    }, true);
+  }
+
+  setTimeout(function(){
+    try{ window.rebuildEBtns(); }catch(e){ console.error('v11 initial rebuild', e); }
+    roiBindEnemyDelegation();
+  }, 30);
+  setTimeout(function(){
+    try{ window.rebuildEBtns(); }catch(e){}
+    roiBindEnemyDelegation();
+  }, 300);
+})();
 </script>
 
 </body>
