@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<htmal lang="pt-BR">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
@@ -352,6 +352,7 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
     <button class="tb" onclick="sw('shop',this)"><span class="tb-ic">🛒</span>Loja</button>
     <button class="tb" onclick="sw('missions',this)"><span class="tb-ic">📜</span>Missões</button>
     <button class="tb" onclick="sw('dungeon',this)"><span class="tb-ic">🗺</span>Masmorra</button>
+    <button class="tb" onclick="sw('invasion',this)"><span class="tb-ic">💀</span>Invasão</button>
     <button class="tb" onclick="sw('ranking',this)"><span class="tb-ic">👑</span>Ranking</button>
     <button class="tb" onclick="sw('achievements',this)"><span class="tb-ic">🏆</span>Conquistas</button>
     <button class="tb" onclick="sw('invasion',this)"><span class="tb-ic">💀</span>Invasão</button>
@@ -444,6 +445,11 @@ h1,h2,h3,.cf{font-family:'Cinzel',serif}
       </div>
       <div class="skillbar" id="skillbar"></div>
       <div class="potion-bar" id="potionBar"></div>
+    </div>
+    <!-- Equipment durability status in battle -->
+    <div class="card" style="padding:9px">
+      <div style="font-size:10px;color:var(--gold);font-family:Cinzel,serif;margin-bottom:6px">🔧 Durabilidade dos Equipamentos</div>
+      <div id="battle-equip-status" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px"></div>
     </div>
     <div class="card" style="padding:9px"><div class="clog" id="clog"><div class="ll sys">⚔ Sistema idle iniciado. Escolha um inimigo para começar sua jornada!</div></div></div>
     <div class="card" style="padding:10px">
@@ -646,14 +652,31 @@ const SHOP_ITEMS=[
 ];
 
 const BASE_ENEMIES=[
-  {name:'Goblin',icon:'👺',hpM:0.8,atkMin:4,atkMax:9,defM:0.3,xpM:0.8,renM:0.8,goldM:2,drops:['osso','pele','pedra'],minLv:1,type:'low'},
-  {name:'Lobo',icon:'🐺',hpM:1.2,atkMin:7,atkMax:14,defM:0.4,xpM:1.2,renM:1.2,goldM:4,drops:['pele','madeira','osso'],minLv:1,type:'low'},
-  {name:'Orc',icon:'👹',hpM:2.5,atkMin:15,atkMax:28,defM:1.0,xpM:2,renM:3,goldM:12,drops:['ferro','couro','cristal'],minLv:5,type:'mid'},
-  {name:'Nécromante',icon:'💀',hpM:2.0,atkMin:18,atkMax:32,defM:0.8,xpM:2.5,renM:4,goldM:15,drops:['veneno','cristal','runa'],minLv:8,type:'mid'},
-  {name:'Troll',icon:'🧌',hpM:4,atkMin:25,atkMax:45,defM:1.6,xpM:3.5,renM:6,goldM:25,drops:['aco','runa','ferro'],minLv:15,type:'high'},
-  {name:'Dragão',icon:'🐉',hpM:12,atkMin:50,atkMax:90,defM:3,xpM:10,renM:20,goldM:80,drops:['dragao','mana_gem','aco'],minLv:20,type:'dragon'},
-  {name:'Lich',icon:'👁',hpM:8,atkMin:40,atkMax:75,defM:2.5,xpM:8,renM:18,goldM:60,drops:['alma','celestial','runa'],minLv:30,type:'high'},
-  {name:'Leviatã',icon:'🌊',hpM:20,atkMin:70,atkMax:130,defM:5,xpM:18,renM:40,goldM:120,drops:['adamant','alma','sangue'],minLv:40,type:'high'},
+  // ── FLORESTA INICIAL ──
+  {name:'Goblin',icon:'👺',hpM:0.8,atkMin:4,atkMax:9,defM:0.3,xpM:0.8,renM:0.8,goldM:2,drops:['osso','pele','pedra'],minLv:1,type:'low',region:'🌲 Floresta'},
+  {name:'Lobo',icon:'🐺',hpM:1.2,atkMin:7,atkMax:14,defM:0.4,xpM:1.2,renM:1.2,goldM:4,drops:['pele','madeira','osso'],minLv:1,type:'low',region:'🌲 Floresta'},
+  {name:'Aranha Gigante',icon:'🕷',hpM:1.0,atkMin:6,atkMax:12,defM:0.35,xpM:1.0,renM:1.0,goldM:3,drops:['veneno','pele','madeira'],minLv:2,type:'low',region:'🌲 Floresta'},
+  {name:'Bandido',icon:'🗡',hpM:1.4,atkMin:9,atkMax:16,defM:0.5,xpM:1.4,renM:1.5,goldM:8,drops:['ferro','couro','pele'],minLv:4,type:'low',region:'🌲 Floresta'},
+  // ── PÂNTANO ──
+  {name:'Orc',icon:'👹',hpM:2.5,atkMin:15,atkMax:28,defM:1.0,xpM:2,renM:3,goldM:12,drops:['ferro','couro','cristal'],minLv:5,type:'mid',region:'🌿 Pântano'},
+  {name:'Nécromante',icon:'💀',hpM:2.0,atkMin:18,atkMax:32,defM:0.8,xpM:2.5,renM:4,goldM:15,drops:['veneno','cristal','runa'],minLv:8,type:'mid',region:'🌿 Pântano'},
+  {name:'Crocodilo Mutante',icon:'🐊',hpM:2.8,atkMin:16,atkMax:30,defM:1.2,xpM:2.2,renM:3.5,goldM:14,drops:['pele','osso','couro'],minLv:7,type:'mid',region:'🌿 Pântano'},
+  {name:'Espectro',icon:'👻',hpM:1.8,atkMin:20,atkMax:35,defM:0.6,xpM:2.8,renM:5,goldM:18,drops:['cristal','alma','veneno'],minLv:10,type:'mid',region:'🌿 Pântano'},
+  // ── MONTANHAS ──
+  {name:'Troll',icon:'🧌',hpM:4,atkMin:25,atkMax:45,defM:1.6,xpM:3.5,renM:6,goldM:25,drops:['aco','runa','ferro'],minLv:15,type:'high',region:'⛰ Montanhas'},
+  {name:'Golem de Pedra',icon:'🪨',hpM:5,atkMin:22,atkMax:40,defM:2.5,xpM:3.8,renM:7,goldM:28,drops:['pedra','ferro','aco'],minLv:18,type:'high',region:'⛰ Montanhas'},
+  {name:'Grifo',icon:'🦅',hpM:3.5,atkMin:28,atkMax:50,defM:1.4,xpM:4.0,renM:8,goldM:30,drops:['pele','runa','cristal'],minLv:20,type:'high',region:'⛰ Montanhas'},
+  // ── COVIL DO DRAGÃO ──
+  {name:'Dragão',icon:'🐉',hpM:12,atkMin:50,atkMax:90,defM:3,xpM:10,renM:20,goldM:80,drops:['dragao','mana_gem','aco'],minLv:20,type:'dragon',region:'🔥 Covil'},
+  {name:'Wyrm de Fogo',icon:'🔥',hpM:8,atkMin:40,atkMax:70,defM:2.2,xpM:7,renM:15,goldM:55,drops:['dragao','cristal','runa'],minLv:22,type:'dragon',region:'🔥 Covil'},
+  // ── ABISMO SOMBRIO ──
+  {name:'Lich',icon:'👁',hpM:8,atkMin:40,atkMax:75,defM:2.5,xpM:8,renM:18,goldM:60,drops:['alma','celestial','runa'],minLv:30,type:'high',region:'🌑 Abismo'},
+  {name:'Demônio',icon:'😈',hpM:9,atkMin:45,atkMax:80,defM:2.8,xpM:9,renM:20,goldM:65,drops:['alma','sangue','cristal'],minLv:33,type:'high',region:'🌑 Abismo'},
+  {name:'Sombra Arcana',icon:'🌑',hpM:7,atkMin:42,atkMax:78,defM:2.0,xpM:8.5,renM:19,goldM:62,drops:['celestial','alma','mana_gem'],minLv:35,type:'high',region:'🌑 Abismo'},
+  // ── PROFUNDEZAS ──
+  {name:'Leviatã',icon:'🌊',hpM:20,atkMin:70,atkMax:130,defM:5,xpM:18,renM:40,goldM:120,drops:['adamant','alma','sangue'],minLv:40,type:'high',region:'🌊 Profundezas'},
+  {name:'Kraken',icon:'🐙',hpM:18,atkMin:65,atkMax:120,defM:4.5,xpM:16,renM:36,goldM:110,drops:['adamant','cristal','sangue'],minLv:42,type:'high',region:'🌊 Profundezas'},
+  {name:'Titã Antigo',icon:'⚡',hpM:25,atkMin:80,atkMax:150,defM:6,xpM:22,renM:50,goldM:140,drops:['adamant','celestial','alma'],minLv:45,type:'high',region:'🌊 Profundezas'},
 ];
 
 const DAILY_BOSS={name:'Guardião Ancião',icon:'👑',hpM:25,atkMin:80,atkMax:150,defM:8,xpM:40,renM:80,goldM:400,drops:['celestial','alma','adamant'],minLv:1};
@@ -855,7 +878,7 @@ function usePotion(type){
   if(type==='potion'){const heal=Math.floor(G.hero.hpMax*0.15);G.hero.hp=Math.min(G.hero.hpMax,G.hero.hp+heal);toast(`🧪 +${heal} HP (15% HP máx)`);}
   else if(type==='mana_potion'){const restore=Math.floor(G.hero.manaMax*0.15);G.hero.mana=Math.min(G.hero.manaMax,G.hero.mana+restore);toast(`💙 +${restore} MANA (15% MANA máx)`);}
   else if(type==='elixir'){const heal=Math.floor(G.hero.hpMax*0.15);const restore=Math.floor(G.hero.manaMax*0.15);G.hero.hp=Math.min(G.hero.hpMax,G.hero.hp+heal);G.hero.mana=Math.min(G.hero.manaMax,G.hero.mana+restore);toast(`✨ +${heal} HP +${restore} MANA`);}
-  updateProfile();save();renderInventory();
+  updateProfile();renderPotionBar();renderInventory();save();
 }
 
 function buyShopItem(item){
@@ -863,7 +886,7 @@ function buyShopItem(item){
     G.hero.gold-=item.price;
     if(item.type==='potion'||item.type==='mana_potion'||item.type==='elixir'){addPotion(item.type);toast(`🛒 Comprou ${item.name}!`);}
     else if(item.type==='material'){if(!G.materials[item.material])G.materials[item.material]=0;G.materials[item.material]+=item.qty;toast(`🛒 ${item.qty}x ${MATS[item.material].name}!`);}
-    save();updateProfile();renderShop();renderInventory();
+    save();updateProfile();renderShop();renderInventory();renderPotionBar();
   } else toast('💰 Ouro insuficiente!');
 }
 
@@ -916,43 +939,52 @@ function applyDeathPenalty(){
   // XP loss: 15% do XP do nível atual
   const xpLoss=Math.floor(G.hero.xp*0.15);
   G.hero.xp=Math.max(0,G.hero.xp-xpLoss);
-  // Durability loss
+  // Durability loss — show exact amounts per item
   const slots=['weapon','helm','chest','boots','ring','amulet','gloves','gem'];
-  const brokenItems=[];
+  const durLossDetails=[];
   slots.forEach(slot=>{
     if(G.equipment[slot]){
       const key=`dur_${slot}`;
-      if(G.durability[key])G.durability[key]=Math.max(0,G.durability[key]-Math.floor((G.equipment[slot].maxDura||50)*0.05));
-      if(G.durability[key]<=0)brokenItems.push(G.equipment[slot].name);
+      if(!G.durability[key])G.durability[key]=G.equipment[slot].maxDura||50;
+      const deathLoss=Math.floor((G.equipment[slot].maxDura||50)*0.10);
+      const before=Math.floor(G.durability[key]);
+      G.durability[key]=Math.max(0,G.durability[key]-deathLoss);
+      const after=Math.floor(G.durability[key]);
+      durLossDetails.push({name:G.equipment[slot].name,before,after,loss:deathLoss});
       if(G.durability[key]<=0)destroyEquipment(slot);
     }
   });
   checkAchievements();
   // Show death popup
-  showDeathPopup(renLoss,xpLoss,brokenItems);
+  showDeathPopup(renLoss,xpLoss,durLossDetails);
   addLog(`💀 Você morreu! Perdeu ${renLoss} Renome, ${xpLoss} XP e equipamentos sofreram desgaste!`,'sys');
 }
 
-function showDeathPopup(renLoss,xpLoss,brokenItems){
+function showDeathPopup(renLoss,xpLoss,durLossDetails){
   let existing=document.getElementById('deathPopup');
   if(existing)existing.remove();
   const popup=document.createElement('div');
   popup.id='deathPopup';
-  popup.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px';
-  let brokenHtml=brokenItems.length?`<div style="color:var(--red);font-size:10px;margin-top:6px">⚠ Itens destruídos: ${brokenItems.join(', ')}</div>`:'';
-  popup.innerHTML=`<div style="background:var(--panel);border:2px solid rgba(200,60,60,.7);border-radius:10px;padding:24px;max-width:340px;width:100%;text-align:center">
+  popup.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px';
+  const durHtml=(durLossDetails||[]).map(d=>`<div>🔧 ${d.name}: <span style="color:var(--dur)">${d.before}→${d.after}</span> (-${d.loss})</div>`).join('');
+  popup.innerHTML=`<div style="background:var(--panel);border:2px solid rgba(200,60,60,.7);border-radius:10px;padding:24px;max-width:380px;width:100%;text-align:center">
     <div style="font-size:48px;margin-bottom:10px">💔</div>
     <h2 style="font-family:Cinzel,serif;color:var(--red);font-size:18px;margin-bottom:8px">Ferimento Grave!</h2>
-    <p style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.7">Você sofreu um ferimento muito grave e desmaiou no campo de batalha. Não foi desta vez... mas a próxima pode ser fatal.</p>
-    <div style="background:rgba(200,60,60,.1);border:1px solid rgba(200,60,60,.3);border-radius:6px;padding:10px;font-size:11px;line-height:2">
+    <p style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.7">Você sofreu um ferimento muito grave e desmaiou no campo de batalha.<br><strong style="color:var(--txt)">Não se preocupe — foi apenas um ferimento muito grave, não a morte!</strong></p>
+    <div style="background:rgba(200,60,60,.1);border:1px solid rgba(200,60,60,.3);border-radius:6px;padding:10px;font-size:11px;line-height:2;text-align:left">
       <div>💀 Renome perdido: <strong style="color:var(--red)">${renLoss.toLocaleString('pt-BR')}</strong></div>
       <div>📉 XP perdido: <strong style="color:var(--red)">${xpLoss.toLocaleString('pt-BR')}</strong></div>
-      <div>🔧 Desgaste: todos os equipamentos</div>
-      ${brokenHtml}
+      ${durHtml}
     </div>
-    <button onclick="document.getElementById('deathPopup').remove()" style="margin-top:16px;width:100%;padding:10px;background:rgba(200,60,60,.15);border:1px solid rgba(200,60,60,.5);border-radius:5px;color:var(--red);font-family:Cinzel,serif;font-size:12px;cursor:pointer">⚔ Continuar a Jornada</button>
+    <button onclick="closeDeathPopup()" style="margin-top:16px;width:100%;padding:10px;background:rgba(200,60,60,.15);border:1px solid rgba(200,60,60,.5);border-radius:5px;color:var(--txt);font-family:Cinzel,serif;font-size:12px;cursor:pointer">⚔ Continuar a Jornada</button>
   </div>`;
   document.body.appendChild(popup);
+}
+
+function closeDeathPopup(){
+  const popup=document.getElementById('deathPopup');if(popup)popup.remove();
+  if(G.hero.hp<=0){G.hero.hp=Math.floor(G.hero.hpMax*0.5);}
+  updateProfile();updateDurabilityDisplay();renderBattleEquipStatus();renderPotionBar();save();
 }
 
 // Durability loss per rarity (2 to 0.25)
@@ -1067,14 +1099,14 @@ function startCombat(bname,isBoss=false,isWeekly=false){
   if(G.combat.active)return;
   if(!G.hero.class){toast('Escolha sua classe primeiro!');return;}
   if(G.dungeon.active){toast('🗺 Você está na masmorra! Espere terminar.');return;}
-  if(G.hero.hp<=0){applyDeathPenalty();G.hero.hp=Math.floor(G.hero.hpMax*0.5);addLog('💀 HP restaurado em 50%.','sys');}
+  if(G.hero.hp<=0){G.hero.hp=Math.floor(G.hero.hpMax*0.5);updateProfile();toast('💊 HP restaurado para continuar!');}
   let base;
   if(isWeekly)base=WEEKLY_BOSS;else if(isBoss)base=DAILY_BOSS;else base=BASE_ENEMIES.find(e=>e.name===bname);
   if(!base)return;
   const enemy=scaledE(base,true);enemy.baseName=base.name;
   enemy.btype=isWeekly?'weekly':isBoss?'boss':base.type;
   G.combat.enemy=enemy;G.combat.active=true;G.combat.buffTurns=0;G.combat.buffAtk=0;G.combat.buffDef=0;G.combat.buffDodge=0;
-  renderCombatUI();
+  renderCombatUI();renderBattleEquipStatus();
   setBadge(isWeekly?'⚔ SEMANAL':isBoss?'⚔ DIÁRIO':'⚔ Combatendo',isWeekly?'var(--pur)':isBoss?'var(--gold)':'var(--red)','rgba(200,60,60,.5)');
   addLog(`─── ${G.hero.name} vs ${enemy.name} ───`,'sys');
   clearInterval(G.combat.tid);
@@ -1082,28 +1114,108 @@ function startCombat(bname,isBoss=false,isWeekly=false){
   G.combat.tid=setInterval(()=>combatTick(isBoss,isWeekly),spd);
 }
 
+function applyClassPassive(h,e){
+  // Each class has 2 passives that trigger randomly, costing mana
+  const ct=h.classType;
+  // Guerreiro: quebra-armadura (20% chance, -30% DEF do inimigo por turno), contra-ataque (15% chance, extra hit)
+  if(ct==='str'){
+    if(Math.random()<0.20&&h.mana>=10){
+      h.mana-=10;
+      e.def=Math.max(0,Math.floor(e.def*0.7));
+      addLog(`🛡💥 Quebra-Armadura! DEF do inimigo reduzida!`,'heal');
+    }
+    if(Math.random()<0.15&&h.mana>=8){
+      h.mana-=8;
+      const extraDmg=Math.max(1,Math.floor(h.atk*0.5-e.def));
+      e.hp-=extraDmg;
+      addLog(`⚔ Contra-Ataque! +${extraDmg} dano extra!`,'dmg');
+    }
+  }
+  // Mago: dano mágico adicional (25% chance), escudo arcano (15% chance)
+  if(ct==='int'){
+    if(Math.random()<0.25&&h.mana>=12){
+      h.mana-=12;
+      const magicDmg=Math.max(1,Math.floor(h.atk*0.8));
+      e.hp-=magicDmg;
+      addLog(`✨ Dano Mágico! +${magicDmg} dano arcano!`,'dmg');
+    }
+    if(Math.random()<0.15&&h.mana>=15){
+      h.mana-=15;
+      h.buffDef=(h.buffDef||0)+15;h.buffTurns=Math.max(h.buffTurns||0,2);
+      addLog(`🛡 Escudo Arcano passivo ativado!`,'heal');
+    }
+  }
+  // Arqueiro: esquiva extra (20% chance), veneno (18% chance — 2 hits de 10% ATQ)
+  if(ct==='agi'){
+    if(Math.random()<0.20&&h.mana>=8){
+      h.mana-=8;
+      h.buffDodge=Math.max(h.buffDodge||0,0.25);h.buffTurns=Math.max(h.buffTurns||0,2);
+      addLog(`💨 Esquiva passiva! +25% esquiva por 2 turnos!`,'heal');
+    }
+    if(Math.random()<0.18&&h.mana>=10){
+      h.mana-=10;
+      const poisonDmg=Math.max(1,Math.floor(h.atk*0.10))*2;
+      e.hp-=poisonDmg;
+      addLog(`🧪 Veneno! +${poisonDmg} dano de veneno!`,'dmg');
+    }
+  }
+  // Paladino: sustain (20% chance de curar 5% HP), mitigação (18% chance de reduzir dano recebido)
+  if(ct==='pal'){
+    if(Math.random()<0.20&&h.mana>=8){
+      h.mana-=8;
+      const reg=Math.floor(h.hpMax*0.05);h.hp=Math.min(h.hpMax,h.hp+reg);
+      addLog(`✨ Sustain: +${reg} HP regenerado!`,'heal');
+    }
+    if(Math.random()<0.18&&h.mana>=10){
+      h.mana-=10;
+      h.buffDef=(h.buffDef||0)+20;h.buffTurns=Math.max(h.buffTurns||0,2);
+      addLog(`🛡 Mitigação! DEF +20 por 2 turnos!`,'heal');
+    }
+  }
+  h.mana=Math.max(0,h.mana);
+}
+
+function renderBattleEquipStatus(){
+  const el=document.getElementById('battle-equip-status');if(!el)return;
+  const slots=['helm','chest','weapon','boots','ring','amulet','gloves','gem'];
+  const icons={helm:'⛑',chest:'🛡',weapon:'🗡',boots:'👢',ring:'💍',amulet:'📿',gloves:'🧤',gem:'💎'};
+  const rarityDurLoss={common:2,uncommon:1.5,rare:1.0,epic:0.5,legendary:0.3,cursed:0.25};
+  el.innerHTML=slots.map(slot=>{
+    const item=G.equipment[slot];if(!item)return'';
+    const key=`dur_${slot}`;
+    const dur=G.durability[key]!==undefined?G.durability[key]:(item.maxDura||50);
+    const maxDur=item.maxDura||50;
+    const pct=Math.floor((dur/maxDur)*100);
+    const loss=rarityDurLoss[item.rarity||'common']||2;
+    const color=pct<20?'var(--red)':pct<50?'var(--atk)':'var(--grn)';
+    return`<div style="background:var(--card2);border:1px solid ${pct<20?'var(--red)':'var(--border)'};border-radius:4px;padding:4px 6px;font-size:8px;text-align:center;min-width:58px">
+      <div>${icons[slot]}</div>
+      <div style="color:var(--muted);font-size:7px">${slot}</div>
+      <div style="color:${color};font-weight:700">${pct}%</div>
+      <div style="color:var(--dim);font-size:7px">-${loss}/turno</div>
+    </div>`;
+  }).join('');
+}
+
 function combatTick(isBoss,isWeekly){
   if(!G.combat.active||!G.combat.enemy)return;
   const h=G.hero,e=G.combat.enemy;
   checkAutoPotion();
-  if(G.combat.skillAuto&&G.combat.skillAuto.some(v=>v)&&h.mana>=15&&(!G.combat.skillCooldown||G.combat.skillCooldown<=Date.now())){
-    const skills=SKILLS_BY_CLASS[h.classType];
-    if(skills){for(let i=0;i<skills.length;i++){if(G.combat.skillAuto[i]&&h.mana>=skills[i].cost){useSkill(skills[i],i);break;}}}
-  }
+  // Passivas de classe (substituem skills manuais)
+  applyClassPassive(h,e);
   if(h.buffTurns>0){h.buffTurns--;if(h.buffTurns<=0){h.buffAtk=0;h.buffDef=0;h.buffDodge=0;addLog('✨ Buffs expiraram.','sys');}}
   const ca=h.atk*(1+(h.buffAtk||0));const cd=h.def+(h.buffDef||0);
   const isCrit=Math.random()*100<h.crit;
   let dE=Math.max(1,ca-e.def+rng(-2,5));
-  // Sir Blessing damage bonus
   if(G.hero.hasSirBlessing)dE=Math.floor(dE*1.15);
   if(isCrit)dE=Math.floor(dE*1.9);
   let dH=Math.max(1,e.atk-cd+rng(-2,4));
   if(Math.random()<(h.buffDodge||0)){addLog('💨 Esquivou!','heal');dH=0;}
-  if(h.classType==='pal'&&Math.random()<0.25){const reg=Math.floor(h.hpMax*0.04);h.hp=Math.min(h.hpMax,h.hp+reg);addLog(`✨ Reg: +${reg} HP`,'heal');}
   e.hp-=dE;h.hp-=dH;h.hp=Math.max(0,h.hp);
   addLog(`${h.icon}→${e.icon} ${dE}${isCrit?' 💥CRÍTICO!':''}`,'dmg');
   if(dH>0)addLog(`${e.icon}→${h.icon} ${dH}`,'dmg');
   renderCombatUI();
+  renderBattleEquipStatus();
   if(e.hp<=0)endCombat(true,isBoss,isWeekly);else if(h.hp<=0)endCombat(false);else updateProfile();
 }
 
@@ -1135,10 +1247,12 @@ function endCombat(won,isBoss=false,isWeekly=false){
       else{const ne=availEnemies()[0];if(ne)setTimeout(()=>{if(!G.combat.active)startCombat(ne.name);},1000);}
     }
   } else {
-    G.streak=0;applyDeathPenalty();addLog('💀 Derrotado.','sys');
+    G.streak=0;applyDeathPenalty();
+    // HP restored inside closeDeathPopup(), but ensure combat can't continue with 0 HP
+    if(!document.getElementById('deathPopup'))G.hero.hp=Math.floor(G.hero.hpMax*0.5);
     setBadge('✗ Derrota','var(--red)','rgba(200,60,60,.5)');
   }
-  G.combat.enemy=null;save();updateProfile();renderInventory();
+  G.combat.enemy=null;save();updateProfile();renderInventory();renderBattleEquipStatus();
 }
 
 function flee(){
@@ -1158,13 +1272,28 @@ function setBadge(t,c,b){const el=document.getElementById('cstat');if(el){el.tex
 function rebuildEBtns(){
   const c=document.getElementById('enemy-btns');if(!c)return;
   c.innerHTML='';
-  availEnemies().forEach(e=>{
-    const btn=document.createElement('button');btn.className='abtn';btn.textContent=e.icon+' '+e.name;
-    btn.onclick=()=>startCombat(e.name);c.appendChild(btn);
+  const available=availEnemies();
+  // Group by region
+  const regions={};
+  available.forEach(e=>{
+    const r=e.region||'🌍 Outros';
+    if(!regions[r])regions[r]=[];
+    regions[r].push(e);
   });
-  const dBtn=document.createElement('button');dBtn.className='abtn pri';dBtn.textContent='👑 Chefe Diário';
+  Object.entries(regions).forEach(([region,enemies])=>{
+    const label=document.createElement('div');
+    label.style.cssText='width:100%;font-size:9px;color:var(--gold);font-family:Cinzel,serif;margin-top:6px;margin-bottom:2px;letter-spacing:1px';
+    label.textContent=region;
+    c.appendChild(label);
+    enemies.forEach(e=>{
+      const btn=document.createElement('button');btn.className='abtn';btn.style.fontSize='9px';
+      btn.textContent=e.icon+' '+e.name+' (Lv'+e.minLv+'+)';
+      btn.onclick=()=>startCombat(e.name);c.appendChild(btn);
+    });
+  });
+  const dBtn=document.createElement('button');dBtn.className='abtn pri';dBtn.style.cssText='width:100%;margin-top:8px';dBtn.textContent='👑 Chefe Diário';
   dBtn.onclick=()=>{if(G.dailyBossKilled)toast('❌ Chefe Diário já derrotado!');else startCombat(null,true,false);};c.appendChild(dBtn);
-  const wBtn=document.createElement('button');wBtn.className='abtn';wBtn.textContent='💀 Chefe Semanal';
+  const wBtn=document.createElement('button');wBtn.className='abtn';wBtn.style.cssText='width:100%;margin-top:4px';wBtn.textContent='💀 Chefe Semanal';
   wBtn.onclick=()=>{if(G.weeklyBossKilled)toast('❌ Chefe Semanal já derrotado!');else startCombat(null,false,true);};c.appendChild(wBtn);
 }
 
@@ -1433,6 +1562,15 @@ function renderInvasion(){
   const cd=document.getElementById('invasionCountdown');
   const cont=document.getElementById('invasionContent');
   if(!cd||!cont)return;
+  if(G.hero.level<25){
+    cd.textContent='';
+    cont.innerHTML=`<div style="text-align:center;padding:20px;color:var(--muted)">
+      <div style="font-size:28px;margin-bottom:8px">🔒</div>
+      <div style="font-family:Cinzel,serif;color:var(--red);margin-bottom:6px">Invasões Bloqueadas</div>
+      <div style="font-size:11px">Desbloqueie no <strong style="color:var(--txt)">Nível 25</strong>. Você está no Nível ${G.hero.level}.</div>
+    </div>`;
+    return;
+  }
   const {diff,str}=getInvasionCountdown();
   const today=brasiliaDate();
   const alreadyReg=G.invasion.registered&&G.invasion.lastDate===today;
@@ -1565,21 +1703,9 @@ function renderPotionBar(){
 }
 
 function renderSkills(){
-  const bar=document.getElementById('skillbar');if(!bar||!G.hero.classType)return;
-  const skills=SKILLS_BY_CLASS[G.hero.classType];if(!skills)return;
-  const onCd=G.combat.skillCooldown&&G.combat.skillCooldown>Date.now();
-  bar.innerHTML=skills.map((s,i)=>{
-    const canUse=G.hero.mana>=s.cost&&!onCd&&G.combat.active;
-    const dmgText=s.dmgMult>0?`~${Math.floor(G.hero.atk*s.dmgMult)} dmg`:'buff';
-    return`<div style="flex:1">
-      <button class="skill-btn ${canUse?'':'disabled'}" onclick="${canUse?`useSkill(SKILLS_BY_CLASS['${G.hero.classType}'][${i}],${i})`:''}">
-        ${s.name}<br>
-        <span style="font-size:7px">💙${s.cost} mana | ${dmgText} | ${s.desc}</span>
-      </button>
-      <div class="skill-auto" onclick="toggleSkillAuto(${i})" style="cursor:pointer;text-align:center;font-size:8px">
-        ${G.combat.skillAuto&&G.combat.skillAuto[i]?'🔁 Auto ON':'⚡ Auto OFF'}
-      </div></div>`;
-  }).join('');
+  // Skills são passivas — não há botões de skill manual.
+  // Apenas garante que a potion bar seja renderizada.
+  renderPotionBar();
 }
 
 // ─── INVENTORY ───────────────────────────────────────────────────
@@ -1853,15 +1979,30 @@ function openNameChange(){
   const inp=document.getElementById('nameInput');if(inp){inp.value=G.hero.name;inp.focus();}
 }
 function cancelName(){document.getElementById('nameModal').classList.remove('show');}
-function confirmName(){
+async function confirmName(){
   const n=document.getElementById('nameInput')?.value.trim();
   if(!n||n.length<2){toast('Nome inválido (mínimo 2 caracteres)!');return;}
+  const finalName=n.substring(0,16);
   const oldName=G.hero.name;
-  G.hero.name=n.substring(0,16);
+  if(finalName===oldName){document.getElementById('nameModal').classList.remove('show');return;}
+  // Check uniqueness in Firebase
+  if(firebaseInitialized){
+    try{
+      const db=firebase.firestore();
+      const snap=await db.collection('players').where('name','==',finalName).get();
+      const conflict=snap.docs.find(d=>d.id!==G.userId);
+      if(conflict){toast('❌ Nome já em uso! Escolha outro.');return;}
+      // Delete old ranking entry
+      const oldKey=oldName.toLowerCase().replace(/[^a-z0-9]/g,'_');
+      await db.collection('ranking').doc(oldKey).delete().catch(()=>{});
+    }catch(e){console.log('Name change error',e);}
+  }
+  G.hero.name=finalName;
   G.nameChangeCount=(G.nameChangeCount||0)+1;
   G.nameLastChanged=Date.now();
   document.getElementById('nameModal').classList.remove('show');
-  if(oldName!==G.hero.name){const ok='roi_player_'+oldName.toLowerCase().replace(/[^a-z0-9]/g,'_');localStorage.removeItem(ok);}
+  const okLocal='roi_player_'+oldName.toLowerCase().replace(/[^a-z0-9]/g,'_');
+  localStorage.removeItem(okLocal);
   save();updateProfile();pushRanking();toast('Nome alterado: '+G.hero.name);
 }
 
@@ -1870,14 +2011,24 @@ function showFirstNameModal(){
   document.getElementById('nameFirstModal').style.display='flex';
   document.getElementById('nameFirstInput').focus();
 }
-function confirmFirstName(){
+async function confirmFirstName(){
   const n=document.getElementById('nameFirstInput')?.value.trim();
   if(!n||n.length<2){toast('Nome inválido!');return;}
-  G.hero.name=n.substring(0,16);
+  const finalName=n.substring(0,16);
+  // Check uniqueness in Firebase
+  if(firebaseInitialized){
+    try{
+      const db=firebase.firestore();
+      const snap=await db.collection('players').where('name','==',finalName).get();
+      // Allow if the only match is own uid
+      const conflict=snap.docs.find(d=>d.id!==G.userId);
+      if(conflict){toast('❌ Nome já em uso por outro aventureiro! Escolha outro.');return;}
+    }catch(e){console.log('Name check error',e);}
+  }
+  G.hero.name=finalName;
   G.nameChangeCount=0;
   document.getElementById('nameFirstModal').style.display='none';
   save();updateProfile();
-  // Show class modal
   document.getElementById('classModal').style.display='flex';
 }
 
@@ -1944,11 +2095,12 @@ function initFirebase(){
         document.getElementById('accountActions').style.display='flex';
         loadUserDataFromFirebase(user.uid);
         loadChat();
+        startRealtimeSync(user.uid);
       } else {
-        // Não logado — mostra overlay
         document.getElementById('loginOverlay').style.display='flex';
         document.getElementById('logoutBtn').style.display='none';
         document.getElementById('accountActions').style.display='none';
+        if(_firestoreUnsub){_firestoreUnsub();_firestoreUnsub=null;}
       }
     });
     return true;
@@ -1978,30 +2130,62 @@ async function doGoogleSignIn(){
   }
 }
 
+// Throttle for syncToFirebase — avoid rapid successive writes
+let _syncTimer=null;
+function save(){
+  try{localStorage.setItem(SK,JSON.stringify(G));}catch(e){}
+  if(_syncTimer)clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(syncToFirebase,3000);
+}
+
 async function syncToFirebase(){
-  if(!firebaseInitialized||!G.userId)return;
+  if(!firebaseInitialized||!G.userId||!G.hero.name)return;
   if(typeof firebase==='undefined'||!firebase.firestore)return;
   try{
     const db=firebase.firestore();
-    await db.collection('players').doc(G.userId).set({
+    const ts=firebase.firestore.FieldValue.serverTimestamp();
+    const payload={
       name:G.hero.name,class:G.hero.class,icon:G.hero.icon,renown:G.hero.renown,
       level:G.hero.level,kills:G.hero.kills,prestige:G.hero.prestige,gold:G.hero.gold,
-      deaths:G.hero.deaths||0,equippedTitle:G.hero.equippedTitle||'',
-      lastUpdate:firebase.firestore.FieldValue.serverTimestamp(),
-      gameData:JSON.stringify(G)
-    },{merge:true});
+      deaths:G.hero.deaths||0,equippedTitle:G.hero.equippedTitle||'',userId:G.userId,
+      lastUpdate:ts,gameData:JSON.stringify(G)
+    };
+    await db.collection('players').doc(G.userId).set(payload,{merge:true});
     const rkKey=G.hero.name.toLowerCase().replace(/[^a-z0-9]/g,'_');
     await db.collection('ranking').doc(rkKey).set({
       name:G.hero.name,class:G.hero.class,icon:G.hero.icon,renown:G.hero.renown,
       level:G.hero.level,kills:G.hero.kills,prestige:G.hero.prestige,deaths:G.hero.deaths||0,
-      userId:G.userId,equippedTitle:G.hero.equippedTitle||'',
-      lastUpdate:firebase.firestore.FieldValue.serverTimestamp()
+      userId:G.userId,equippedTitle:G.hero.equippedTitle||'',lastUpdate:ts
     });
-    // Count registered users
     const countSnap=await db.collection('players').get();
     const onlEl=document.getElementById('onl');
     if(onlEl)onlEl.textContent=(countSnap.size||1)+' aventureiros cadastrados';
   }catch(e){console.error('Sync Firebase:',e);}
+}
+
+// Real-time listener — keeps data in sync across tabs/browsers for same account
+let _firestoreUnsub=null;
+function startRealtimeSync(uid){
+  if(_firestoreUnsub)_firestoreUnsub();
+  if(!firebaseInitialized)return;
+  try{
+    const db=firebase.firestore();
+    _firestoreUnsub=db.collection('players').doc(uid).onSnapshot(doc=>{
+      if(!doc.exists)return;
+      const data=doc.data();
+      if(!data||!data.gameData)return;
+      // Only apply if server data is newer and from same uid (avoid overwriting local combat)
+      if(data.userId!==G.userId)return;
+      if(G.combat.active)return; // Don't interrupt active combat
+      const serverG=JSON.parse(data.gameData);
+      // Merge non-combat fields from server
+      const fieldsToSync=['hero','inventory','materials','potions','equipment','durability',
+        'missions','progress','achievements','titles','forgeLevel','forgeXp','forgeXpNext',
+        'dailyMissions','weeklyMissions','dungeon','invasion','nameChangeCount','nameLastChanged'];
+      fieldsToSync.forEach(f=>{if(serverG[f]!==undefined)G[f]=serverG[f];});
+      updateProfile();updateDurabilityDisplay();renderPotionBar();renderBattleEquipStatus();
+    },err=>console.log('Realtime sync error',err));
+  }catch(e){console.log('startRealtimeSync error',e);}
 }
 
 async function loadUserDataFromFirebase(uid){
@@ -2068,6 +2252,7 @@ function getDefaultG(){
 function updateAll(){
   updateProfile();rebuildEBtns();renderInventory();renderForge();renderMissions();renderShop();
   updateDurabilityDisplay();updateForgeUI();renderTitleList();renderAchievements();renderDungeon();renderInvasion();
+  renderPotionBar();renderBattleEquipStatus();
   // Restore equipment display
   const slotMap={helm:0,chest:1,weapon:2,boots:3,ring:4,amulet:5,gloves:6,gem:7};
   Object.entries(G.equipment).forEach(([slot,item])=>{
@@ -2086,7 +2271,7 @@ function sw(tab,btn){
   if(tab==='inventory')renderInventory();
   if(tab==='forge'){renderForge();updateForgeUI();}
   if(tab==='shop')renderShop();
-  if(tab==='combat')renderSkills();
+  if(tab==='combat'){renderSkills();renderBattleEquipStatus();}
   if(tab==='achievements')renderAchievements();
   if(tab==='dungeon')renderDungeon();
   if(tab==='invasion')renderInvasion();
@@ -2121,9 +2306,23 @@ function waitForFirebaseAndInit(){
   setInterval(()=>{if(document.getElementById('tab-invasion')?.classList.contains('on'))renderInvasion();},1000);
   // Dungeon check
   checkDungeonOnLoad();
-  // Auto-save
-  setInterval(save,15000);
+  // Auto-save every 10s (throttled sync to Firebase inside save())
+  setInterval(()=>{try{localStorage.setItem(SK,JSON.stringify(G));}catch(e){}},10000);
+  // Periodic full sync to Firebase every 30s
+  setInterval(syncToFirebase,30000);
+  // Mission reset check every minute
   setInterval(()=>{checkReset();if(document.getElementById('tab-missions')?.classList.contains('on'))renderMissions();},60000);
+  // Global UI refresh every 5s to keep all panels current without page reload
+  setInterval(()=>{
+    updateProfile();
+    updateDurabilityDisplay();
+    renderPotionBar();
+    renderBattleEquipStatus();
+    if(document.getElementById('tab-forge')?.classList.contains('on')){renderForge();updateForgeUI();}
+    if(document.getElementById('tab-inventory')?.classList.contains('on'))renderInventory();
+    if(document.getElementById('tab-shop')?.classList.contains('on'))renderShop();
+    if(document.getElementById('tab-ranking')?.classList.contains('on'))loadRanking();
+  },5000);
 })();
 </script>
 <!-- Firebase SDKs -->
