@@ -1973,5 +1973,445 @@ function waitForFirebaseAndInit(){
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<script>
+/* ===== Realm of Iron v3 patch ===== */
+(function(){
+  const UID_PREFIX='realm_iron_uid_';
+  const SERVER_SOURCE_DELAY=1200;
+  const RARITY_CRAFT_REQ={common:1,uncommon:3,rare:7,epic:12,legendary:18,cursed:16};
+  const RARITY_DURA_LOSS={common:2.0,uncommon:1.4,rare:1.0,epic:0.6,legendary:0.2,cursed:0.5};
+  const COLLECTION_NODES=[
+    {id:'forest',name:'Bosque Sombrio',icon:'🌲',desc:'Madeira, pele e ervas.',drops:{madeira:[1,3],pele:[0,2],osso:[0,1],pedra:[0,1]}},
+    {id:'quarry',name:'Pedreira Antiga',icon:'🪨',desc:'Pedra, ferro e cristal.',drops:{pedra:[2,4],ferro:[1,3],cristal:[0,1]}},
+    {id:'mine',name:'Mina Profunda',icon:'⛏',desc:'Aço, adamante e runas.',drops:{ferro:[1,2],aco:[0,2],adamant:[0,1],runa:[0,1]}},
+    {id:'marsh',name:'Pântano Rúnico',icon:'🧪',desc:'Veneno, runas e sangue.',drops:{veneno:[1,2],runa:[0,1],sangue:[0,1],alma:[0,1]}}
+  ];
+
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+  function createBaseState(){
+    return {
+      hero:{name:'',class:'',icon:'',classType:'',level:1,xp:0,xpNext:100,hp:100,hpMax:100,mana:50,manaMax:50,atk:10,def:6,spd:8,crit:5,renown:0,gold:100,kills:0,deaths:0,prestige:0,prestigeBonus:1.0,equippedTitle:'',hasSirBlessing:false},
+      combat:{active:false,auto:false,enemy:null,tid:null,buffTurns:0,buffAtk:0,buffDef:0,buffDodge:0,skillAuto:[],autoPotion:false},
+      streak:0,inventory:[],materials:{},
+      potions:{potion:0,mana_potion:0,elixir:0},
+      equipment:{helm:null,chest:null,weapon:null,boots:null,ring:null,amulet:null,gloves:null,gem:null},
+      durability:{},
+      missions:{tutorial:{},daily:{},weekly:{}},
+      progress:{kills:0,streak:0,dragonKill:0,drops:0,lowKills:0,midKills:0,highKills:0,forge:0,level:1,deaths:0,prestige:0,goldOnce:0,weeklyKills:0,weeklyDungeon:0,weeklyCollection:0},
+      achievements:{},titles:[],
+      lastDate:'',lastWeek:'',dailyBossKilled:false,weeklyBossKilled:false,skillCooldown:0,
+      forgeLevel:1,forgeXp:0,forgeXpNext:100,
+      dailyMissions:[],weeklyMissions:[],
+      userId:null,userEmail:null,
+      dungeon:{active:false,startTime:null,endTime:null,duration:null},
+      invasion:{registered:false,lastDate:'',slots:10,participants:0,scaling:1,rewards:{xp:0,renown:0,gold:0}},
+      collection:{node:'forest',auto:false,lastTick:0},
+      nameChangeCount:0,nameLastChanged:null,
+      meta:{serverLoaded:false,lastServerSync:0}
+    };
+  }
+  function resetTransientState(){
+    G.combat={active:false,auto:false,enemy:null,tid:null,buffTurns:0,buffAtk:0,buffDef:0,buffDodge:0,skillAuto:(G.combat&&G.combat.skillAuto)||[],autoPotion:(G.combat&&G.combat.autoPotion)||false};
+    if(!G.collection) G.collection={node:'forest',auto:false,lastTick:0};
+    if(!G.invasion) G.invasion={registered:false,lastDate:'',slots:10,participants:0,scaling:1,rewards:{xp:0,renown:0,gold:0}};
+    if(!G.meta) G.meta={serverLoaded:false,lastServerSync:0};
+  }
+  function uidKey(uid){ return uid ? UID_PREFIX+uid : null; }
+  function persistLocalOnly(){
+    try{
+      if(G.userId){ localStorage.setItem(uidKey(G.userId), JSON.stringify(G)); }
+    }catch(e){}
+  }
+  window.save = function(){ persistLocalOnly(); syncToFirebaseSafe(); };
+  window.load = function(){ return; };
+  async function syncToFirebaseSafe(){
+    if(!window.firebaseInitialized || !G.userId || !window.firebase || !firebase.firestore) return;
+    try{
+      const db=firebase.firestore();
+      const payload=clone(G);
+      payload.meta.serverLoaded=true;
+      payload.meta.lastServerSync=Date.now();
+      await db.collection('players').doc(G.userId).set({
+        userId:G.userId,
+        userEmail:G.userEmail||'',
+        name:G.hero.name||'',class:G.hero.class||'',icon:G.hero.icon||'',
+        level:G.hero.level||1,prestige:G.hero.prestige||0,renown:G.hero.renown||0,
+        lastUpdate:firebase.firestore.FieldValue.serverTimestamp(),
+        gameData:JSON.stringify(payload)
+      },{merge:true});
+      if(G.hero.name && G.hero.class){
+        await db.collection('ranking').doc(G.userId).set({
+          userId:G.userId,name:G.hero.name,class:G.hero.class,icon:G.hero.icon,
+          renown:G.hero.renown||0,level:G.hero.level||1,kills:G.hero.kills||0,
+          prestige:G.hero.prestige||0,deaths:G.hero.deaths||0,equippedTitle:G.hero.equippedTitle||'',
+          lastUpdate:firebase.firestore.FieldValue.serverTimestamp()
+        },{merge:true});
+      }
+      const onlEl=document.getElementById('onl');
+      try{
+        const countSnap=await db.collection('players').get();
+        if(onlEl) onlEl.textContent=(countSnap.size||1)+' aventureiros cadastrados';
+      }catch(e){}
+    }catch(e){ console.error('safe sync',e); }
+  }
+  window.syncToFirebase = syncToFirebaseSafe;
+
+  window.loadUserDataFromFirebase = async function(uid){
+    if(!window.firebaseInitialized || !uid) return;
+    try{
+      const db=firebase.firestore();
+      const doc=await db.collection('players').doc(uid).get();
+      let loaded=null;
+      if(doc.exists && doc.data() && doc.data().gameData){
+        try{ loaded=JSON.parse(doc.data().gameData); }catch(e){}
+      }
+      if(!loaded){
+        try{
+          const local=localStorage.getItem(uidKey(uid));
+          if(local) loaded=JSON.parse(local);
+        }catch(e){}
+      }
+      loaded = loaded || createBaseState();
+      const fresh=createBaseState();
+      Object.assign(fresh, loaded);
+      window.G = fresh;
+      G.userId=uid;
+      G.userEmail=(firebase.auth().currentUser&&firebase.auth().currentUser.email)||fresh.userEmail||'';
+      G.meta.serverLoaded=true;
+      resetTransientState();
+      if(!G.dailyMissions||!G.dailyMissions.length) G.dailyMissions=generateDailyMissions();
+      if(!G.weeklyMissions||!G.weeklyMissions.length) G.weeklyMissions=generateWeeklyMissions();
+      checkReset();
+      updateAll();
+      persistLocalOnly();
+      if(!G.hero.name) showFirstNameModal();
+      else if(!G.hero.class) document.getElementById('classModal').style.display='flex';
+      else toast('✅ Dados carregados do servidor.');
+    }catch(e){
+      console.error('server load fail',e);
+      window.G=createBaseState();
+      G.userId=uid;G.userEmail=(firebase.auth().currentUser&&firebase.auth().currentUser.email)||'';
+      resetTransientState();
+      updateAll();
+      showFirstNameModal();
+    }
+  };
+
+  window.doLogout = async function(){
+    if(!confirm('Deseja sair da conta Google?')) return;
+    try{ if(window.firebaseInitialized) await firebase.auth().signOut(); }catch(e){}
+    window.G=createBaseState();
+    resetTransientState();
+    updateAll();
+    document.getElementById('loginOverlay').style.display='flex';
+    document.getElementById('logoutBtn').style.display='none';
+    document.getElementById('topUserInfo').textContent='';
+    document.getElementById('accountActions').style.display='none';
+    toast('👋 Deslogado com sucesso!');
+  };
+
+  function patchData(){
+    SHOP_ITEMS.forEach(item=>{ item.price=Math.ceil(item.price*1.5); });
+    SHOP_ITEMS[0].desc='Restaura 15% do HP máximo';
+    SHOP_ITEMS[1].desc='Restaura 15% da MANA máxima';
+    SHOP_ITEMS[2].desc='Restaura 15% do HP e 15% da MANA';
+    BASE_ENEMIES.forEach(e=>{ e.goldM=e.goldM/1.2; e.renM=e.renM/4; });
+    DAILY_BOSS.goldM=DAILY_BOSS.goldM/1.2; DAILY_BOSS.renM=DAILY_BOSS.renM/4;
+    WEEKLY_BOSS.goldM=WEEKLY_BOSS.goldM/1.2; WEEKLY_BOSS.renM=WEEKLY_BOSS.renM/4;
+    RECIPES.forEach(r=>{
+      r.goldCost=Math.ceil((r.goldCost||0)*3.5);
+      r.value=Math.ceil((r.value||0)*3.5);
+      r.craftLvReq=RARITY_CRAFT_REQ[r.rarity]||1;
+      if(r.slot==='weapon'){ if(!r.reqs.madeira) r.reqs.madeira=1; }
+      if(r.slot==='chest'){ if(!r.reqs.couro && !r.reqs.ferro) r.reqs.couro=2; }
+      if(r.slot==='helm'){ if(!r.reqs.ferro) r.reqs.ferro=2; }
+      if(r.slot==='boots' || r.slot==='gloves'){ if(!r.reqs.couro) r.reqs.couro=2; }
+      if(r.slot==='ring' || r.slot==='amulet'){ if(!r.reqs.cristal) r.reqs.cristal=1; }
+      if(r.slot==='gem'){ if(!r.reqs.mana_gem) r.reqs.mana_gem=1; }
+    });
+    if(window.SKILLS_BY_CLASS){
+      SKILLS_BY_CLASS.str=[
+        {name:'Golpe Poderoso',cost:18,desc:'220% dano',dmgMult:2.2,effect:(hero,enemy)=>{const dmg=Math.max(1,Math.floor(hero.atk*2.2-enemy.def));return{damage:dmg,text:`💥 Golpe Poderoso: ${dmg} dano!`};}},
+        {name:'Corte Sísmico',cost:28,desc:'300% dano',dmgMult:3.0,effect:(hero,enemy)=>{const dmg=Math.max(1,Math.floor(hero.atk*3-enemy.def*0.8));return{damage:dmg,text:`🪓 Corte Sísmico: ${dmg} dano!`};}},
+        {name:'Execução',cost:36,desc:'420% dano',dmgMult:4.2,effect:(hero,enemy)=>{const dmg=Math.max(1,Math.floor(hero.atk*4.2-enemy.def));return{damage:dmg,text:`☠ Execução: ${dmg} dano brutal!`};}},
+        {name:'Grito de Guerra',cost:12,desc:'+18% ATQ/3t',dmgMult:0,effect:(hero)=>{hero.buffAtk=(hero.buffAtk||0)+0.18;hero.buffTurns=3;return{damage:0,text:'🗣 Grito de Guerra!'};}},
+        {name:'Postura de Ferro',cost:16,desc:'+25 DEF/3t',dmgMult:0,effect:(hero)=>{hero.buffDef=(hero.buffDef||0)+25;hero.buffTurns=3;return{damage:0,text:'🛡 Postura de Ferro!'};}},
+        {name:'Sangue em Fervor',cost:20,desc:'+10% ATQ e esquiva',dmgMult:0,effect:(hero)=>{hero.buffAtk=(hero.buffAtk||0)+0.10;hero.buffDodge=0.1;hero.buffTurns=3;return{damage:0,text:'🔥 Sangue em Fervor!'};}}
+      ];
+      SKILLS_BY_CLASS.int=[
+        {name:'Bola de Fogo',cost:18,desc:'240% dano',dmgMult:2.4,effect:(hero,enemy)=>{const dmg=Math.max(1,Math.floor(hero.atk*2.4-enemy.def));return{damage:dmg,text:`🔥 Bola de Fogo: ${dmg} dano!`};}},
+        {name:'Lança Arcana',cost:28,desc:'320% dano',dmgMult:3.2,effect:(hero,enemy)=>{const dmg=Math.max(1,Math.floor(hero.atk*3.2-enemy.def*0.9));return{damage:dmg,text:`🔷 Lança Arcana: ${dmg} dano!`};}},
+        {name:'Nova Astral',cost:40,desc:'430% dano',dmgMult:4.3,effect:(hero,enemy)=>{const dmg=Math.max(1,Math.floor(hero.atk*4.3-enemy.def));return{damage:dmg,text:`🌌 Nova Astral: ${dmg} dano!`};}},
+        {name:'Escudo Arcano',cost:15,desc:'+30 DEF/3t',dmgMult:0,effect:(hero)=>{hero.buffDef=(hero.buffDef||0)+30;hero.buffTurns=3;return{damage:0,text:'🛡 Escudo Arcano!'};}},
+        {name:'Foco Mental',cost:10,desc:'+15% ATQ/3t',dmgMult:0,effect:(hero)=>{hero.buffAtk=(hero.buffAtk||0)+0.15;hero.buffTurns=3;return{damage:0,text:'🧠 Foco Mental!'};}},
+        {name:'Canalização',cost:0,desc:'recupera 15% mana',dmgMult:0,effect:(hero)=>{const mana=Math.floor(hero.manaMax*0.15);hero.mana=Math.min(hero.manaMax,hero.mana+mana);return{damage:0,text:`🔮 +${mana} mana!`};}}
+      ];
+      SKILLS_BY_CLASS.agi=[
+        {name:'Chuva de Flechas',cost:16,desc:'210% dano',dmgMult:2.1,effect:(hero,enemy)=>{const dmg=Math.max(1,Math.floor(hero.atk*2.1-enemy.def));return{damage:dmg,text:`🏹 Chuva de Flechas: ${dmg} dano!`};}},
+        {name:'Tiro Perfurante',cost:24,desc:'290% dano',dmgMult:2.9,effect:(hero,enemy)=>{const dmg=Math.max(1,Math.floor(hero.atk*2.9-enemy.def*0.75));return{damage:dmg,text:`🎯 Tiro Perfurante: ${dmg} dano!`};}},
+        {name:'Rajada Final',cost:34,desc:'390% dano',dmgMult:3.9,effect:(hero,enemy)=>{const dmg=Math.max(1,Math.floor(hero.atk*3.9-enemy.def));return{damage:dmg,text:`🦅 Rajada Final: ${dmg} dano!`};}},
+        {name:'Esquiva Ágil',cost:12,desc:'+30% esquiva/2t',dmgMult:0,effect:(hero)=>{hero.buffDodge=0.3;hero.buffTurns=2;return{damage:0,text:'💨 Esquiva Ágil!'};}},
+        {name:'Olhos de Caça',cost:14,desc:'+14% ATQ/3t',dmgMult:0,effect:(hero)=>{hero.buffAtk=(hero.buffAtk||0)+0.14;hero.buffTurns=3;return{damage:0,text:'👁 Olhos de Caça!'};}},
+        {name:'Passo Sombrio',cost:10,desc:'+18 SPD/3t',dmgMult:0,effect:(hero)=>{hero.spd+=18;hero.buffTurns=3;return{damage:0,text:'🌫 Passo Sombrio!'};}}
+      ];
+      SKILLS_BY_CLASS.pal=[
+        {name:'Golpe Sagrado',cost:18,desc:'200% dano + cura',dmgMult:2.0,effect:(hero,enemy)=>{const dmg=Math.max(1,Math.floor(hero.atk*2-enemy.def));const heal=Math.floor(hero.hpMax*0.08);hero.hp=Math.min(hero.hpMax,hero.hp+heal);return{damage:dmg,text:`✨ Golpe Sagrado: ${dmg} dano e +${heal} HP!`};}},
+        {name:'Martelo de Luz',cost:26,desc:'290% dano',dmgMult:2.9,effect:(hero,enemy)=>{const dmg=Math.max(1,Math.floor(hero.atk*2.9-enemy.def));return{damage:dmg,text:`🔨 Martelo de Luz: ${dmg} dano!`};}},
+        {name:'Juízo Final',cost:36,desc:'380% dano',dmgMult:3.8,effect:(hero,enemy)=>{const dmg=Math.max(1,Math.floor(hero.atk*3.8-enemy.def));return{damage:dmg,text:`☀ Juízo Final: ${dmg} dano!`};}},
+        {name:'Bênção da Luz',cost:14,desc:'cura 15% HP',dmgMult:0,effect:(hero)=>{const heal=Math.floor(hero.hpMax*0.15);hero.hp=Math.min(hero.hpMax,hero.hp+heal);return{damage:0,text:`🌟 +${heal} HP!`};}},
+        {name:'Muralha Sacra',cost:16,desc:'+35 DEF/3t',dmgMult:0,effect:(hero)=>{hero.buffDef=(hero.buffDef||0)+35;hero.buffTurns=3;return{damage:0,text:'🛐 Muralha Sacra!'};}},
+        {name:'Voto de Ferro',cost:18,desc:'+12% ATQ/3t',dmgMult:0,effect:(hero)=>{hero.buffAtk=(hero.buffAtk||0)+0.12;hero.buffTurns=3;return{damage:0,text:'⚜ Voto de Ferro!'};}}
+      ];
+    }
+  }
+
+  const originalGenerateDailyMissions = window.generateDailyMissions;
+  window.generateDailyMissions = function(){
+    const list = originalGenerateDailyMissions();
+    return list.map(m=>({ ...m, goldR:Math.floor(m.goldR/1.2), renR:Math.floor(m.renR/2) }));
+  };
+  window.generateWeeklyMissions = function(){
+    return [
+      {id:`w_${Date.now()}_0`,name:'Semanal da Arena',icon:'⚔',desc:'Derrote 60 inimigos na semana',type:'weeklyKills',target:60,renR:700,xpR:4200,goldR:800},
+      {id:`w_${Date.now()}_1`,name:'Semanal da Coleta',icon:'⛏',desc:'Colete 120 recursos na semana',type:'weeklyCollection',target:120,renR:600,xpR:3600,goldR:650},
+      {id:`w_${Date.now()}_2`,name:'Semanal da Masmorra',icon:'🗺',desc:'Conclua 2 masmorras',type:'weeklyDungeon',target:2,renR:900,xpR:5200,goldR:900}
+    ];
+  };
+
+  window.getWeekResetStamp = function(){
+    const now = new Date();
+    const local = new Date(now.toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));
+    const target = new Date(local);
+    const day = local.getDay();
+    let diff = (2 - day + 7) % 7;
+    target.setDate(local.getDate()+diff);
+    target.setHours(21,0,0,0);
+    if(local >= target) target.setDate(target.getDate()+7);
+    return target.getTime();
+  };
+  window.checkReset = function(){
+    const now = new Date(new Date().toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));
+    const todayKey = now.toLocaleDateString('pt-BR');
+    if(G.lastDate!==todayKey){
+      G.lastDate=todayKey; G.dailyBossKilled=false; G.missions.daily={}; G.dailyMissions=generateDailyMissions(); G.streak=0;
+      if(!G.progress) G.progress={};
+      G.progress.kills=0; G.progress.streak=0; G.progress.drops=0; G.progress.lowKills=0; G.progress.midKills=0; G.progress.highKills=0; G.progress.goldOnce=Math.max(G.progress.goldOnce||0,G.hero.gold||0);
+      save();
+    }
+    const resetStamp=getWeekResetStamp();
+    if(!G.weeklyResetAt || Date.now()>=G.weeklyResetAt){
+      G.weeklyResetAt=resetStamp; G.weeklyBossKilled=false; G.missions.weekly={}; G.weeklyMissions=generateWeeklyMissions();
+      G.progress.weeklyKills=0; G.progress.weeklyCollection=0; G.progress.weeklyDungeon=0;
+      save();
+    }
+    const el=document.getElementById('reset-timer');
+    if(el){
+      const diff=Math.max(0,(G.weeklyResetAt||resetStamp)-Date.now());
+      const d=Math.floor(diff/86400000), h=Math.floor((diff%86400000)/3600000), m=Math.floor((diff%3600000)/60000);
+      el.textContent=`Semanal: ter 21h · ${d}d ${h}h ${m}m`;
+    }
+  };
+
+  window.doPrestige = function(){
+    if(G.hero.level>=50 && G.hero.renown>=100000){
+      G.hero.prestige++; G.hero.prestigeBonus=1+(G.hero.prestige*0.05); G.hero.level=1; G.hero.xp=0; G.hero.xpNext=100; G.hero.renown=0;
+      G.hero.gold=Math.floor(G.hero.gold*0.3);
+      G.hero.hpMax=Math.floor(100*G.hero.prestigeBonus); G.hero.hp=G.hero.hpMax;
+      G.hero.manaMax=Math.floor(50*G.hero.prestigeBonus); G.hero.mana=G.hero.manaMax;
+      G.hero.atk=Math.floor(10*G.hero.prestigeBonus); G.hero.def=Math.floor(6*G.hero.prestigeBonus); G.hero.spd=Math.floor(8*G.hero.prestigeBonus); G.hero.crit=5;
+      G.progress.prestige=G.hero.prestige; checkAchievements(); save(); updateProfile(); rebuildEBtns();
+      toast(`🌀 Reencarnação ${G.hero.prestige}!`);
+    } else toast(`❌ Requer Nível 50 e 100.000 Renome. (Nv${G.hero.level}|${G.hero.renown} Ren)`);
+  };
+
+  window.usePotion = function(type){
+    if(!(G.potions[type]>0)){ toast('❌ Sem poção!'); return; }
+    G.potions[type]--;
+    const hpAmt=Math.floor(G.hero.hpMax*0.15), manaAmt=Math.floor(G.hero.manaMax*0.15);
+    if(type==='potion'){ G.hero.hp=Math.min(G.hero.hpMax,G.hero.hp+hpAmt); toast(`🧪 +${hpAmt} HP`); }
+    else if(type==='mana_potion'){ G.hero.mana=Math.min(G.hero.manaMax,G.hero.mana+manaAmt); toast(`💙 +${manaAmt} MANA`); }
+    else if(type==='elixir'){ G.hero.hp=Math.min(G.hero.hpMax,G.hero.hp+hpAmt); G.hero.mana=Math.min(G.hero.manaMax,G.hero.mana+manaAmt); toast(`✨ +${hpAmt} HP e +${manaAmt} MANA`); }
+    updateProfile(); save(); renderInventory(); renderPotionBar();
+  };
+
+  window.reduceDurability = function(slot){
+    if(!G.equipment[slot]) return;
+    const item=G.equipment[slot]; const key=`dur_${slot}`; if(G.durability[key]===undefined) G.durability[key]=item.maxDura||50;
+    const loss=RARITY_DURA_LOSS[item.rarity||'common']||1;
+    G.durability[key]=Math.max(0, +(G.durability[key]-loss).toFixed(2));
+    if(G.durability[key]<=0) destroyEquipment(slot); else updateDurabilityDisplay();
+  };
+  window.updateDurabilityDisplay = function(){
+    const slots=['helm','chest','weapon','boots','ring','amulet','gloves','gem'];
+    slots.forEach((slot,i)=>{
+      const de=document.getElementById(`dur${i}`); if(!de) return;
+      const key=`dur_${slot}`; const dur=G.durability[key]; const item=G.equipment[slot];
+      if(item && dur!==undefined){ const pct=Math.floor((dur/(item.maxDura||50))*100); de.textContent=`🔧 ${dur.toFixed(1)}/${item.maxDura||50} (${pct}%)`; de.style.color=pct<20?'var(--red)':'var(--dur)'; }
+      else de.textContent='';
+    });
+  };
+
+  window.applyDeathPenalty = function(source='combate'){
+    G.hero.deaths=(G.hero.deaths||0)+1; G.progress.deaths=(G.progress.deaths||0)+1;
+    const renLoss=Math.max(10,Math.floor(G.hero.renown*0.06)); G.hero.renown=Math.max(0,G.hero.renown-renLoss);
+    const xpLoss=Math.max(1,Math.floor((G.hero.xpNext||100)*0.15)); G.hero.xp=Math.max(0,(G.hero.xp||0)-xpLoss);
+    const parts=[];
+    ['weapon','helm','chest','boots','ring','amulet','gloves','gem'].forEach(slot=>{
+      if(G.equipment[slot]){ const key=`dur_${slot}`; G.durability[key]=Math.max(0,+((G.durability[key]||G.equipment[slot].maxDura)-1.5).toFixed(2)); if(G.durability[key]<=0){ parts.push(`${G.equipment[slot].name} destruído`); destroyEquipment(slot);} }
+    });
+    const msg=`💀 Ferimento gravíssimo após ${source}! Perdeu ${renLoss} renome e ${xpLoss} XP.`+(parts.length?` ${parts.join(', ')}.`:'');
+    addLog(msg,'sys'); toast(msg); checkAchievements(); save(); updateProfile();
+    return {renLoss,xpLoss,parts,msg};
+  };
+
+  const originalClaimMission = window.claimMission;
+  window.claimMission = function(id,type){
+    const beforeXP=G.hero.xp, beforeRen=G.hero.renown;
+    const ret=originalClaimMission(id,type);
+    if(type==='weekly'){
+      // extra boost for weekly over daily
+      G.hero.renown += 250; gainXP(1200); G.hero.gold += 300;
+      save(); updateProfile(); renderMissions();
+    }
+    return ret;
+  };
+
+  window.startDungeon = function(){
+    if(G.hero.level<15){ toast('❌ Masmorras liberam no nível 15.'); return; }
+    if(G.dungeon.active){ toast('Já está na masmorra!'); return; }
+    if(G.combat.active){ toast('Termine o combate antes!'); return; }
+    const dur=DUNGEON_DURATIONS.find(d=>d.hours===window.dungeonSelectedDur)||DUNGEON_DURATIONS[0];
+    G.dungeon.active=true; G.dungeon.startTime=Date.now(); G.dungeon.duration=dur.hours; G.dungeon.endTime=Date.now()+dur.hours*3600000; save(); renderDungeon();
+    if(window.dungeonTimer) clearInterval(window.dungeonTimer); window.dungeonTimer=setInterval(renderDungeon,1000); toast(`🗺 Entrou na masmorra por ${dur.label}!`);
+  };
+  window.claimDungeon = function(){
+    if(!G.dungeon.active||Date.now()<G.dungeon.endTime) return;
+    const dur=DUNGEON_DURATIONS.find(d=>d.hours===G.dungeon.duration)||DUNGEON_DURATIONS[0];
+    const baseXP=G.hero.level*50, baseGold=G.hero.level*20;
+    const xpGain=Math.floor(baseXP*dur.xpMult*(0.8+Math.random()*0.4));
+    const goldGain=Math.floor((baseGold*dur.goldMult*(0.8+Math.random()*0.4))/1.2);
+    gainXP(xpGain); G.hero.gold+=goldGain;
+    const matKeys=Object.keys(MATS);
+    for(let i=0;i<dur.hours*2;i++){ const k=matKeys[Math.floor(Math.random()*matKeys.length)]; G.materials[k]=(G.materials[k]||0)+Math.max(1,Math.floor(Math.random()*4)); G.progress.weeklyCollection=(G.progress.weeklyCollection||0)+1; }
+    let rewardLines=[`+${xpGain} XP`,`+${goldGain} ouro`];
+    if(Math.random()<0.65 && G.inventory.length<30){ const rarPool=dur.rarityPool; const rar=rarPool[Math.floor(Math.random()*rarPool.length)]; const opts=RECIPES.filter(r=>r.rarity===rar&&G.hero.level>=r.minLv); if(opts.length){ const recipe=opts[Math.floor(Math.random()*opts.length)]; const stats=applyForgeBonus(recipe.baseStats); G.inventory.push({name:recipe.name,icon:recipe.icon,slot:recipe.slot,rarity:rar,stats,desc:recipe.desc+' [Masmorra]',maxDura:recipe.maxDura}); rewardLines.push(`Item: ${recipe.name}`);} }
+    G.progress.weeklyDungeon=(G.progress.weeklyDungeon||0)+1;
+    const lowHpChance=Math.min(0.15 + (dur.hours*0.06),0.85); const deathChance=Math.max(0.02,dur.hours*0.012);
+    let injury='';
+    if(Math.random()<deathChance){ const loss=applyDeathPenalty('masmorra'); injury='\nFerimento gravíssimo: '+loss.msg; }
+    else if(Math.random()<lowHpChance){ G.hero.hp=Math.max(1,Math.floor(G.hero.hpMax*(0.1+Math.random()*0.25))); injury=`\n⚠ Você saiu muito ferido, com apenas ${G.hero.hp} HP.`; toast('⚠ Você saiu da masmorra gravemente ferido.'); }
+    G.dungeon={active:false,startTime:null,endTime:null,duration:null}; if(window.dungeonTimer) clearInterval(window.dungeonTimer);
+    save(); updateProfile(); renderInventory(); renderDungeon();
+    alert('Recompensas da masmorra:\n'+rewardLines.join('\n')+injury+'\n\nFoi apenas um ferimento muito grave.');
+  };
+
+  window.renderInvasion = function(){
+    const cd=document.getElementById('invasionCountdown'); const cont=document.getElementById('invasionContent'); if(!cd||!cont) return;
+    const {str}=getInvasionCountdown(); const today=brasiliaDate(); const alreadyReg=G.invasion.registered&&G.invasion.lastDate===today;
+    if(G.hero.level<25){ cd.textContent=`Próxima invasão em: ${str}`; cont.innerHTML='<div style="font-size:11px;color:var(--muted)">Invasões diárias liberam apenas no nível 25.</div>'; return; }
+    const participants=G.invasion.participants||Math.max(1,Math.min(10,Math.floor((G.hero.level+G.hero.prestige*3)/8)));
+    const slots=10; const missing=Math.max(0,slots-participants); const scaling=1+participants*0.18;
+    const rewards={xp:Math.floor(900*scaling),renown:Math.floor(220*scaling),gold:Math.floor((650*scaling)/1.2)};
+    G.invasion.participants=participants; G.invasion.slots=slots; G.invasion.scaling=scaling; G.invasion.rewards=rewards;
+    cd.textContent=`Próxima invasão em: ${str}`;
+    cont.innerHTML=`<div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.7">
+      <div>👥 Inscritos simulados: <strong style="color:var(--txt)">${participants}/${slots}</strong> · faltam <strong style="color:var(--gold)">${missing}</strong> vagas</div>
+      <div>📈 Escala de dificuldade: <strong style="color:var(--red)">x${scaling.toFixed(2)}</strong></div>
+      <div>🎁 Recompensas estimadas: ${rewards.xp} XP · ${rewards.renown} Renome · ${rewards.gold} Ouro</div>
+    </div>
+    ${alreadyReg?'<div class="invasion-registered">✅ Você está inscrito na invasão de hoje!</div>':`<button class="abtn" style="background:rgba(200,60,60,.15);border-color:rgba(200,60,60,.4);color:var(--red);width:100%" onclick="registerInvasion()">⚔ Inscrever-se na Invasão</button>`}`;
+  };
+  window.registerInvasion = function(){ if(G.hero.level<25){ toast('❌ Invasões diárias liberam no nível 25.'); return; } G.invasion.registered=true; G.invasion.lastDate=brasiliaDate(); save(); renderInvasion(); toast('⚔ Inscrito na invasão das 21:00!'); };
+
+  window.canForge = function(r){
+    if(G.hero.level<r.minLv) return false;
+    if((G.forgeLevel||1) < (r.craftLvReq||1)) return false;
+    if(r.goldCost&&G.hero.gold<r.goldCost) return false;
+    for(const [m,q] of Object.entries(r.reqs)){ if((G.materials[m]||0)<q) return false; }
+    return true;
+  };
+  window.renderForge = function(){
+    const fl=document.getElementById('forge-list'); if(!fl) return; fl.innerHTML='';
+    const active=window.currentForgeTab||'common';
+    let recipes=RECIPES.filter(r=>r.rarity===active);
+    if(active==='materials'){ recipes=[]; }
+    const tabHtml=['common','uncommon','rare','epic','legendary','cursed','materials'].map(k=>`<button class="rank-tab ${active===k?'on':''}" onclick="currentForgeTab='${k}';renderForge()">${k==='materials'?'📦 Materiais':rarityName(k)}</button>`).join('');
+    fl.innerHTML+=`<div class="rank-tabs" style="margin-bottom:12px">${tabHtml}</div>`;
+    if(active==='materials'){
+      fl.innerHTML+=`<div style="font-size:11px;color:var(--muted);line-height:1.8;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:12px">A coleta agora fica em uma aba própria. Use a guia <strong style="color:var(--gold)">Coleta</strong> para farmar recursos manualmente ou em auto farm.</div>`;
+      return;
+    }
+    recipes.forEach((r,i)=>{
+      const trueIndex=RECIPES.indexOf(r); const can=canForge(r), locked=G.hero.level<r.minLv || (G.forgeLevel||1)<(r.craftLvReq||1);
+      const reqStr=Object.entries(r.reqs).map(([m,q])=>{ const have=G.materials[m]||0, ok=have>=q; return `<span style="color:${ok?'var(--grn)':'var(--red)'}">${MATS[m].icon} ${MATS[m].name} ${have}/${q}</span>`; }).join(' · ');
+      const goldOk=!r.goldCost||G.hero.gold>=r.goldCost; const rc=rarityClass(r.rarity);
+      fl.innerHTML+=`<div class="fi-card" style="${locked?'opacity:.55':''}"><div class="fi-icon">${r.icon}</div><div class="fi-info"><div class="fi-name ${rc}">${r.name} <span style="font-size:9px;color:var(--muted)">(Nv${r.minLv}) · Forja ${r.craftLvReq||1}</span></div><div class="fi-req">${reqStr} · <span style="color:${goldOk?'var(--grn)':'var(--red)'}">💰 ${G.hero.gold}/${r.goldCost||0}</span></div><div class="fi-stats">${r.desc} | Dura: ${r.maxDura} | Raridade: ${rarityName(r.rarity)}</div></div><button class="forge-btn ${can?'can':'no'}" onclick="${can?`forgeItem(${trueIndex})`:''}">${locked?`🔒 Nv/Forja`:(can?'⚒ Forjar':'Falta mat.')}</button></div>`;
+    });
+  };
+
+  window.forgeItem = function(i){
+    const r=RECIPES[i]; if(!canForge(r)){ toast('Materiais, ouro ou nível de forja insuficientes!'); return; } if(G.inventory.length>=30){ toast('Inventário cheio!'); return; }
+    Object.entries(r.reqs).forEach(([m,q])=>{ G.materials[m]-=q; }); if(r.goldCost) G.hero.gold-=r.goldCost;
+    const bs=applyForgeBonus(r.baseStats); const rm=RARITIES[r.rarity]?.mult||1; const boostedStats={}; Object.entries(bs).forEach(([k,v])=>boostedStats[k]=Math.floor(v*rm));
+    G.inventory.push({name:r.name,icon:r.icon,slot:r.slot,rarity:r.rarity,stats:boostedStats,desc:`${r.desc} [Forja Lv${G.forgeLevel}]`,maxDura:r.maxDura});
+    addForgeXp(r.forgeXp); G.progress.forge=(G.progress.forge||0)+1; checkAchievements(); save(); renderInventory(); renderForge(); updateProfile(); toast(`⚒ Forjado: ${r.name}!`);
+  };
+
+  window.sendChatMessage = function(){
+    if(!firebaseInitialized||!G.userId){ toast('❌ Faça login para usar o chat!'); return; }
+    const input=document.getElementById('chatInput'); if(!input) return; const raw=input.value.trim(); if(!raw) return; const filtered=filterChat(raw); input.value='';
+    const now=Date.now();
+    try{ const db=firebase.firestore(); db.collection('chat').add({name:G.hero.name,icon:G.hero.icon,msg:filtered,userId:G.userId,ts:firebase.firestore.FieldValue.serverTimestamp(),createdAt:now,prestige:G.hero.prestige,equippedTitle:G.hero.equippedTitle||''}); }
+    catch(e){ toast('❌ Erro ao enviar mensagem.'); }
+  };
+  window.loadChat = function(){
+    if(!firebaseInitialized) return;
+    try{ const db=firebase.firestore(); db.collection('chat').orderBy('ts','desc').limit(50).onSnapshot(async snap=>{
+      const msgs=[]; const cutoff=Date.now()-6*3600000;
+      snap.forEach(doc=>{ const data=doc.data(); msgs.push({id:doc.id,...data}); const d=data.ts?.toDate?data.ts.toDate().getTime():(data.createdAt||0); if(d && d<cutoff){ db.collection('chat').doc(doc.id).delete().catch(()=>{}); } });
+      msgs.reverse(); const el=document.getElementById('chatMessages'); if(!el) return; if(!msgs.length){ el.innerHTML='<div style="color:var(--muted);font-size:11px;text-align:center;padding:20px">Sem mensagens ainda. Seja o primeiro!</div>'; return; }
+      el.innerHTML=msgs.filter(m=>{ const t=m.ts?.toDate?m.ts.toDate().getTime():(m.createdAt||0); return !t || t>=cutoff; }).map(m=>{ const ts=m.ts?.toDate?m.ts.toDate():new Date(); const time=ts.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); const isSir=m.prestige>=1; return `<div class="chat-msg"><span class="cm-name ${isSir?'sir-name':''}">${m.icon||'⚔'} ${m.name}</span><span class="cm-time">${time}</span><br><span class="cm-text">${m.msg}</span></div>`; }).join(''); el.scrollTop=el.scrollHeight;
+    }); }catch(e){ console.log('Chat load error',e); }
+  };
+
+  function renderCollectionPanel(){
+    const panel=document.getElementById('tab-collection'); if(!panel) return;
+    const node = COLLECTION_NODES.find(n=>n.id===G.collection.node) || COLLECTION_NODES[0];
+    const drops = Object.entries(node.drops).map(([k,v])=>`${MATS[k].icon} ${MATS[k].name} (${v[0]}-${v[1]})`).join(' · ');
+    panel.innerHTML=`<div class="card"><div class="ct">⛏ Coleta de Recursos</div>
+      <div class="rank-tabs">${COLLECTION_NODES.map(n=>`<button class="rank-tab ${n.id===node.id?'on':''}" onclick="selectCollectionNode('${n.id}')">${n.icon} ${n.name}</button>`).join('')}</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.8;margin-bottom:12px">${node.desc}<br>Possíveis drops: ${drops}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="abtn pri" onclick="collectNow()">⛏ Coletar Agora</button>
+        <button class="abtn ${G.collection.auto?'pri':''}" onclick="toggleCollectionAuto()">🔁 Auto Farm: ${G.collection.auto?'ON':'OFF'}</button>
+      </div>
+      <div style="margin-top:12px;font-size:10px;color:var(--muted)">Cada coleta também avança missões semanais de recursos.</div>
+    </div>`;
+  }
+  window.selectCollectionNode = function(id){ G.collection.node=id; save(); renderCollectionPanel(); };
+  window.collectNow = function(){
+    const node=COLLECTION_NODES.find(n=>n.id===G.collection.node)||COLLECTION_NODES[0]; const got=[];
+    Object.entries(node.drops).forEach(([k,range])=>{ const qty=Math.floor(Math.random()*(range[1]-range[0]+1))+range[0]; if(qty>0){ G.materials[k]=(G.materials[k]||0)+qty; got.push(`${MATS[k].icon} ${qty} ${MATS[k].name}`); G.progress.weeklyCollection=(G.progress.weeklyCollection||0)+qty; }});
+    save(); renderInventory(); renderCollectionPanel(); toast(got.join(' · '));
+  };
+  window.toggleCollectionAuto = function(){ G.collection.auto=!G.collection.auto; save(); renderCollectionPanel(); };
+
+  function tickCollectionAuto(){ if(!G.collection || !G.collection.auto) return; if(!G.userId) return; const now=Date.now(); if(now-(G.collection.lastTick||0)<15000) return; G.collection.lastTick=now; collectNow(); }
+
+  function injectCollectionTab(){
+    const tabbar=document.querySelector('.tabbar'); if(tabbar && !document.getElementById('collectionTabBtn')){ const btn=document.createElement('button'); btn.className='tb'; btn.id='collectionTabBtn'; btn.innerHTML='<span class="tb-ic">⛏</span>Coleta'; btn.onclick=function(){ sw('collection',this); }; tabbar.insertBefore(btn, document.querySelector('[onclick*="sw(\'shop\'"]') || null); }
+    if(!document.getElementById('tab-collection')){ const panel=document.createElement('div'); panel.className='panel'; panel.id='tab-collection'; const anchor=document.getElementById('tab-shop'); anchor.parentNode.insertBefore(panel, anchor); }
+    renderCollectionPanel();
+  }
+
+  const originalUpdateAll = window.updateAll;
+  window.updateAll = function(){ originalUpdateAll(); injectCollectionTab(); renderCollectionPanel(); const pbtn=document.getElementById('prestigeBtn'); if(pbtn) pbtn.textContent='🌀 REENCARNAR (Nv 50 + 100.000 Renome)'; const pinfo=document.querySelector('.prestige-bar div[style*="font-size:10px"]'); if(pinfo) pinfo.textContent='Reencarne ao atingir Nv 50 e 100.000 Renome. Ganhe bônus permanente +5% em todos atributos!'; };
+
+  setInterval(()=>{ try{ tickCollectionAuto(); checkReset(); }catch(e){} }, 1000);
+  setTimeout(()=>{ try{ patchData(); injectCollectionTab(); updateAll(); }catch(e){ console.error(e); } }, SERVER_SOURCE_DELAY);
+})();
+</script>
+
 </body>
 </html>
